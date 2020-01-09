@@ -1,0 +1,44 @@
+FROM ubuntu:18.04
+# GNU compiler
+
+RUN echo "---------------------------------------------------------------------MARVELL_HPC_GCC_VERSION_8.3.0_v2020/01---------------------------------------------------------------------" && \
+    apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++-8 \
+        gcc-8 \
+        gfortran-8 \
+        make \
+        wget \
+        git \
+        autoconf \
+        automake \
+        binutils-dev \
+	file \
+        libtool \
+	flex \
+	hwloc \
+        openssh-client \
+        tar \
+        bc \
+        libgfortran3 \
+        libgomp1 \
+	libhwloc-dev \
+        libbinutils  \
+	libnl-3-200 \
+        libnl-route-3-200 \
+        libpmi2-0  \
+        pkg-config \
+        ca-certificates \
+        bzip2 \
+        libnuma-dev \
+        libevent-dev
+
+RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
+    update-alternatives --install /usr/bin/g++ g++ $(which g++-8) 30 && \
+    update-alternatives --install /usr/bin/gfortran gfortran $(which gfortran-8) 30 && \
+    update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
+
+RUN git config --global user.email "docker" && git config --global user.name "docker" && \
+    mkdir -p /docker/src
+
+COPY Dockerfile /docker/src/
