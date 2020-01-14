@@ -1,8 +1,6 @@
-FROM 16.16.16.249:5000/marvell-hpc-gcc:8.3.0
-
-#UCX-1.6.0
-RUN echo "----------------------------------------------------MARVELL_HPC_GCC_LIBS_VERSION_2.0v2020/01----------------------------------------------------------------------------" && \
-    mkdir -p /tmp/ucx && \
+FROM marvell-hpc-gcc:8.3.0
+#UCX
+RUN mkdir -p /tmp/ucx && \
     cd /tmp/ucx && \
     git clone https://github.com/openucx/ucx.git && \
     cd ucx && \
@@ -22,7 +20,7 @@ RUN mkdir -p /tmp/openmpi && \
     make -j && make install -j && \
     rm -rf /tmp/openmpi
 
-#OPENBLAS-0.3.3
+# OPENBLAS-0.3.3
 RUN mkdir -p /tmp/openblas && \
     cd /tmp/openblas && \
     wget https://github.com/xianyi/OpenBLAS/archive/v0.3.3.tar.gz && \
@@ -85,11 +83,15 @@ RUN mkdir -p /tmp/scalapack && \
     make -j64 && make install && \
     rm -rf /tmp/scalapack
 
-#ARMPL-19.3
+# ARMPL-19.3. Copy the necessary libraries and include files from ARMPL
+# into the data subdirectory in the docker build directory. Then copy
+# it into the image. Note that adding the ARMPL libraries makes the image
+# very large. It adds a total of around 2.5GB+ sized files into the image.
 COPY data/include/* /usr/local/include/
 COPY data/lib/* /usr/local/lib/
 
-RUN  mkdir -p /docker/src
-
-COPY data/appinfo.txt /docker/src/
-COPY Dockerfile /docker/src/
+COPY    VERSION /docker/src
+COPY    Dockerfile /docker/src
+RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \
+            xargs -I[] mv /docker/src/Dockerfile /docker/src/[] && \
+        rm /docker/src/VERSION

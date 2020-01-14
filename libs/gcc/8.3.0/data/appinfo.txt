@@ -1,9 +1,0 @@
-#VERSIONS
-Armpl-19.3
-UCX-1.6.0
-Openmpi-4.0.0
-OpenBlas-0.3.3
-Binutils-2.33.1
-Cmake-3.14.5
-Scalapack-2.0.2
-FFTW-3.3.8

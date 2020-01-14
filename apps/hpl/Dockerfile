@@ -1,4 +1,4 @@
-FROM    marvell-hpc-gcc-libs:8.3.0_v1.0
+FROM    marvell-hpc-gcc-libs:8.3.0_v4.0
 
 # Set environment variables
 ENV	LD_LIBRARY_PATH=/usr/local/lib:/opt/arm/lib:${LD_LIBRARY_PATH} \
@@ -7,13 +7,9 @@ ENV	LD_LIBRARY_PATH=/usr/local/lib:/opt/arm/lib:${LD_LIBRARY_PATH} \
 	BLASLIB=libopenblas.a  \
 	TOPDIR=/tmp/hpl/hpl-2.3
 
-# Create necessary directories
-RUN	mkdir -p /docker/run/ && \
-	mkdir -p /docker/src/ && \
-	mkdir -p /tmp/hpl
-
 # Download source
-RUN	cd /tmp/hpl && \
+RUN	mkdir -p /tmp/hpl && \
+        cd /tmp/hpl && \
 	wget http://www.netlib.org/benchmark/hpl/hpl-2.3.tar.gz && tar -zxvf hpl-2.3.tar.gz
 		
 # Copy Makefile
@@ -28,13 +24,15 @@ RUN	cd /tmp/hpl/hpl-2.3 && \
 	make arch=THUNDERX2T99 && \
         rm -rf /tmp/hpl/
 
-    #cp /tmp/hpl/hpl-2.3/THUNDERX2T99/bin/xhpl /usr/local/hpl/bin && \
+# Copy Dockerfile
+COPY    VERSION /docker/src
+COPY    Dockerfile /docker/src
+RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \
+            xargs -I[] mv /docker/src/Dockerfile /docker/src/[] && \
+        rm /docker/src/VERSION
 
-RUN     groupadd -r hpc_user && useradd -r -g hpc_user hpc_user
-USER    hpc_user
-
-# Copy Dockerfile, run scripts and datasets
+# Copy run scripts and datasets
 COPY	data/HPL.dat /docker/run/
-COPY	Dockerfile /docker/src/ 
-COPY	data/run.sh /
-ENTRYPOINT sh "/run.sh"
+COPY	data/run.sh /docker/run
+USER    hpc_user
+ENTRYPOINT sh "/docker/run/run.sh"

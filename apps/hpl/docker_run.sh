@@ -1,1 +1,2 @@
-docker run -it --rm --privileged --shm-size=1G marvell-hpc-hpl:202001_v1.0
+DOCKERNAME=`cat VERSION `
+docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G $DOCKERNAME
