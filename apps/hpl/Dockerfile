@@ -1,5 +1,7 @@
-FROM    marvell-hpc-gcc-libs:8.3.0_v4.0
+ARG     base
+FROM    ${base}
 
+ARG     version
 # Set environment variables
 ENV	PATH=/usr/local/hpl/bin/:${PATH} \
 	CFLAGS="-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math" \
@@ -23,15 +25,18 @@ RUN	cd /tmp/hpl/hpl-2.3 && \
 	make arch=THUNDERX2T99 && \
         rm -rf /tmp/hpl/
 
-# Copy Dockerfile
-COPY    VERSION /docker/src
-COPY    Dockerfile /docker/src
-RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \
-            xargs -I[] mv /docker/src/Dockerfile /docker/src/[] && \
-        rm /docker/src/VERSION
-
 # Copy run scripts and datasets
 COPY	data/HPL.dat /docker/run/
 COPY	data/run.sh /docker/run
+
+# Copy Dockerfile and associated build/run files into /docker/src
+RUN     mkdir -p /docker/src/${version}
+COPY    Dockerfile /docker/src/${version}
+COPY    data /docker/src/${version}
+COPY    docker_run.sh /docker/src/${version}
+COPY    docker_build.sh /docker/src/${version}
+COPY    VERSION /docker/src/${version}
+COPY    BASE /docker/src/${version}
+
 USER    hpc_user
 ENTRYPOINT sh "/docker/run/run.sh"

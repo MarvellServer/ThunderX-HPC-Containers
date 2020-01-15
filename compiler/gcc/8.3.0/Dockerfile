@@ -1,5 +1,8 @@
-FROM marvell-hpc-base:v1.0
+ARG   base
+FROM  ${base}
 # GNU compiler
+
+ARG   version
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -24,8 +27,10 @@ RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
 ENV	LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH} \
         PATH=/usr/local/bin:$PATH
 
-COPY    VERSION /docker/src
-COPY    Dockerfile /docker/src
-RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \
-            xargs -I[] mv /docker/src/Dockerfile /docker/src/[] && \
-        rm /docker/src/VERSION
+# Copy Dockerfile and associated build/run files into /docker/src
+RUN     mkdir -p /docker/src/${version}
+COPY    Dockerfile /docker/src/${version}
+COPY    docker_run.sh /docker/src/${version}
+COPY    docker_build.sh /docker/src/${version}
+COPY    VERSION /docker/src/${version}
+COPY    BASE /docker/src/${version}

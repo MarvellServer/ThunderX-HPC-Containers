@@ -1,4 +1,7 @@
-FROM    ubuntu:18.04
+ARG     base
+FROM    ${base}
+
+ARG     version
 
 # Install basic packages
 RUN     apt-get update -y && \
@@ -32,11 +35,12 @@ RUN     groupadd -r hpc_user && \
         sed -i '26i\%sudo   ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers
 
 # Setup git config
-RUN     git config --global user.email "hpc_user" && git config --global user.name "hpc_user" && \
-        mkdir -p /docker/src
+RUN     git config --global user.email "hpc_user" && git config --global user.name "hpc_user"
 
-COPY    VERSION /docker/src
-COPY    Dockerfile /docker/src
-RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \
-            xargs -I[] mv /docker/src/Dockerfile /docker/src/[] && \
-        rm /docker/src/VERSION
+# Copy Dockerfile and associated build/run files into /docker/src
+RUN     mkdir -p /docker/src/${version}
+COPY    Dockerfile /docker/src/${version}
+COPY    docker_run.sh /docker/src/${version}
+COPY    docker_build.sh /docker/src/${version}
+COPY    VERSION /docker/src/${version}
+COPY    BASE /docker/src/${version}

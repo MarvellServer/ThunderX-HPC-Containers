@@ -1,8 +1,11 @@
-FROM marvell-hpc-gcc-libs:8.3.0_v4.0
+ARG     base
+FROM    ${base}
+
+
+ARG     version
 
 #Setting the Environment variable
-ENV	LD_LIBRARY_PATH=/usr/local/lib/:/opt/arm/lib:${LD_LIBRARY_PATH} \
-	PATH=/usr/local/hpcg/bin:${PATH} \
+ENV	PATH=/usr/local/hpcg/bin:${PATH} \
 	CFLAGS="-O3 -g -fprefetch-loop-arrays -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math  -fopenmp -funroll-loops -std=c++11 -ffp-contract=fast -L/usr/local/lib -larmpl_lp64 -lamath -I/usr/local/include"
 
 #Creating the necessary directory
@@ -28,12 +31,16 @@ RUN	cd /tmp/hpcg/hpcg && \
 	mv bin/hpcg.dat /usr/local/hpcg/bin/ && \
 	rm -rf /tmp/hpcg
 
-COPY    VERSION /docker/src
-COPY    Dockerfile /docker/src
-RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \
-            xargs -I[] mv /docker/src/Dockerfile /docker/src/[] && \
-        rm /docker/src/VERSION
-
 COPY	data/run.sh /docker/run/
+
+# Copy Dockerfile and associated build/run files into /docker/src
+RUN     mkdir -p /docker/src/${version}
+COPY    Dockerfile /docker/src/${version}
+COPY    data /docker/src/${version}
+COPY    docker_run.sh /docker/src/${version}
+COPY    docker_build.sh /docker/src/${version}
+COPY    VERSION /docker/src/${version}
+COPY    BASE /docker/src/${version}
+
 USER    hpc_user
 ENTRYPOINT      sh "/docker/run/run.sh"

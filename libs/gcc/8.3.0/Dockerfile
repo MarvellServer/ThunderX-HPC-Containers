@@ -1,5 +1,8 @@
-FROM marvell-hpc-gcc:8.3.0
+ARG  base
 
+FROM ${base}
+
+ARG  version
 #UCX
 RUN mkdir -p /tmp/ucx && \
     cd /tmp/ucx && \
@@ -90,8 +93,11 @@ RUN mkdir -p /tmp/scalapack && \
 COPY data/include/* /usr/local/include/
 COPY data/lib/* /usr/local/lib/
 
-COPY    VERSION /docker/src
-COPY    Dockerfile /docker/src
-RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \
-            xargs -I[] mv /docker/src/Dockerfile /docker/src/[] && \
-        rm /docker/src/VERSION
+# Copy Dockerfile and associated build/run files into /docker/src
+RUN     mkdir -p /docker/src/${version}
+COPY    Dockerfile /docker/src/${version}
+COPY    data /docker/src/${version}
+COPY    docker_run.sh /docker/src/${version}
+COPY    docker_build.sh /docker/src/${version}
+COPY    VERSION /docker/src/${version}
+COPY    BASE /docker/src/${version}
