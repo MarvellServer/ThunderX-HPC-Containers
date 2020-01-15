@@ -17,7 +17,7 @@ RUN	mkdir -p /tmp/hpcg && \
 	
 #Copy the input file
 COPY	data/Make.THUNDERX2T99 /tmp/hpcg/hpcg/setup/ 
-ADD	data/patches /tmp/hpcg/patches
+COPY	data/patches /tmp/hpcg/patches
 
 #Building HPCG
 RUN	cd /tmp/hpcg/hpcg && \

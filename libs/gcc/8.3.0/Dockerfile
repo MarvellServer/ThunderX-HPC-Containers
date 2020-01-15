@@ -1,4 +1,5 @@
 FROM marvell-hpc-gcc:8.3.0
+
 #UCX
 RUN mkdir -p /tmp/ucx && \
     cd /tmp/ucx && \
@@ -50,7 +51,6 @@ RUN mkdir -p /tmp/cmake && \
     make install && \
     rm -rf /tmp/cmake
 
-ENV LD_LIBRARY_PATH=/usr/local/lib
 #FFTW-3.3.8
 RUN mkdir -p /tmp/fftw3 && \
     cd /tmp/fftw3 && \

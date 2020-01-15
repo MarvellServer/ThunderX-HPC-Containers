@@ -21,6 +21,9 @@ RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
     update-alternatives --install /usr/bin/gfortran gfortran $(which gfortran-8) 30 && \
     update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
 
+ENV	LD_LIBRARY_PATH=/usr/local/lib:${LD_LIBRARY_PATH} \
+        PATH=/usr/local/bin:$PATH
+
 COPY    VERSION /docker/src
 COPY    Dockerfile /docker/src
 RUN     cat /docker/src/VERSION | awk '{print "Dockerfile."$1}' | \

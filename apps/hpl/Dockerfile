@@ -1,8 +1,7 @@
 FROM    marvell-hpc-gcc-libs:8.3.0_v4.0
 
 # Set environment variables
-ENV	LD_LIBRARY_PATH=/usr/local/lib:/opt/arm/lib:${LD_LIBRARY_PATH} \
-	PATH=/usr/local/hpl/bin/:${PATH} \
+ENV	PATH=/usr/local/hpl/bin/:${PATH} \
 	CFLAGS="-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math" \
 	BLASLIB=libopenblas.a  \
 	TOPDIR=/tmp/hpl/hpl-2.3
