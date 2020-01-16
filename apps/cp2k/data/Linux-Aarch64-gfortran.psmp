@@ -1,0 +1,33 @@
+CC          = mpicc
+CPP         =
+FC          = mpifort
+LD          = mpifort
+AR          = ar -r
+
+FFTW_DIR    = __FFTW_DIR__
+BLAS_DIR    = __BLAS_DIR__
+FFTW_INC    = $(FFTW_DIR)/include
+FFTW_LIB    = $(FFTW_DIR)/lib
+MATHS_INC   = $(BLAS_DIR)/include
+MATHS_LIB   = $(BLAS_DIR)/lib
+LIBINT_INC  = 
+LIBINT_LIB  =
+SCALAPACK_DIR = __SCALAPACK_DIR__
+SCALAPACK_LIB = $(SCALAPACK_DIR)/lib
+SPG_LIB     = 
+SPG_INC     = 
+IPM_LIB	    =
+DFLAGS      = -D__FFTW3 -D__parallel -D__SCALAPACK # -D__LIBINT -D__SPGLIB
+
+CPPFLAGS    =
+FCFLAGS     = $(DFLAGS) __FLAGS__ -ffree-form -ffree-line-length-512 \
+              -I$(FFTW_INC) -I$(MATHS_INC) # -I$(LIBINT_INC) -I$(SPG_INC)
+
+LDFLAGS     = $(FCFLAGS)  # -L$(IPM_LIB) -lipm -L$(IPM_LIB) -lipmf -static
+
+LIBS        = -L$(FFTW_LIB) __FFTW_LIBS__\
+              -L$(MATHS_LIB) __BLAS_LIBS__ \
+              -L$(SCALAPACK_LIB) __SCALAPACK_LIBS__ \
+              # -L$(LIBINT_LIB)/libint2.a\
+              # -L$(SPG_LIB)/libsymspg.a
+
