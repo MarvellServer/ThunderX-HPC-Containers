@@ -1,7 +1,10 @@
-FROM    ubuntu/gcc/utils AS hpl
+###############################################################################
+# HPL                                                                         #
+###############################################################################
+FROM    utils AS hpl
 
-COPY    --from=ubuntu/gcc/openmpi /usr/local /usr/local
-COPY    --from=ubuntu/gcc/openblas /usr/local /usr/local
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
 
 # Set Variables and Flags
 ARG	CFLAGS="-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math"
@@ -30,8 +33,8 @@ COPY	data/HPL.dat /docker/run/
 COPY	data/run.sh /docker/run
 
 
-FROM    ubuntu/gcc/base
-COPY    --from=ubuntu/gcc/openmpi /usr/local /usr/local
+FROM    base
+COPY    --from=openmpi /usr/local /usr/local
 ENV	PATH=/usr/local/hpl/bin/:${PATH}
 COPY    --from=hpl /usr/local/hpl/bin /usr/local/hpl/bin
 COPY    --from=hpl /docker/run /docker/run

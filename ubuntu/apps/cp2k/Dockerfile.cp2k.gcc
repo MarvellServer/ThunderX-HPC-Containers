@@ -1,9 +1,9 @@
-FROM    ubuntu/gcc/utils AS cp2k
+FROM    utils AS cp2k
 
-COPY    --from=ubuntu/gcc/openmpi /usr/local /usr/local
-COPY    --from=ubuntu/gcc/fftw3 /usr/local /usr/local
-COPY    --from=ubuntu/gcc/openblas /usr/local /usr/local
-COPY    --from=ubuntu/gcc/scalapack /usr/local /usr/local
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=scalapack /usr/local /usr/local
 
 # Set environment variables
 
@@ -38,15 +38,15 @@ RUN	cd /tmp/cp2k/cp2k && \
 
 COPY	data/run.sh /docker/run
 
-FROM    ubuntu/gcc/base
-COPY    --from=ubuntu/gcc/openmpi /usr/local/bin /usr/local/bin
-COPY    --from=ubuntu/gcc/openmpi /usr/local/lib /usr/local/lib
-COPY    --from=ubuntu/gcc/fftw3 /usr/local/bin/ /usr/local/bin/
-COPY    --from=ubuntu/gcc/fftw3 /usr/local/lib/ /usr/local/lib/
-COPY    --from=ubuntu/gcc/scalapack /usr/local/bin/ /usr/local/bin/
-COPY    --from=ubuntu/gcc/scalapack /usr/local/lib/ /usr/local/lib/
-COPY    --from=ubuntu/gcc/openblas /usr/local/bin/ /usr/local/bin/
-COPY    --from=ubuntu/gcc/openblas /usr/local/lib/ /usr/local/lib/
+FROM    base
+COPY    --from=openmpi /usr/local/bin /usr/local/bin
+COPY    --from=openmpi /usr/local/lib /usr/local/lib
+COPY    --from=fftw3 /usr/local/bin/ /usr/local/bin/
+COPY    --from=fftw3 /usr/local/lib/ /usr/local/lib/
+COPY    --from=scalapack /usr/local/bin/ /usr/local/bin/
+COPY    --from=scalapack /usr/local/lib/ /usr/local/lib/
+COPY    --from=openblas /usr/local/bin/ /usr/local/bin/
+COPY    --from=openblas /usr/local/lib/ /usr/local/lib/
 ENV     PATH=/usr/local/cp2k/bin/:${PATH}
 RUN     mkdir -p /docker/src
 COPY    --from=cp2k /docker/run /docker/run

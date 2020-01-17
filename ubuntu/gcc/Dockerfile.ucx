@@ -1,0 +1,13 @@
+###############################################################################
+# UCX                                                                         #
+###############################################################################
+FROM utils AS ucx
+RUN mkdir -p /tmp/ucx && \
+    cd /tmp/ucx && \
+    git clone https://github.com/openucx/ucx.git && \
+    cd ucx && \
+    git checkout v1.6.0 && \
+    ./autogen.sh && \
+    ./configure --prefix=/usr/local --disable-doxygen-doc --without-knem && \
+    make -j64 && make install -j64 && \
+    rm -rf /tmp/ucx

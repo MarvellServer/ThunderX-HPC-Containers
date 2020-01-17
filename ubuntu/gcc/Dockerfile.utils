@@ -1,0 +1,16 @@
+###############################################################################
+# UTILS                                                                       #
+###############################################################################
+FROM base as utils
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	wget \
+        git \
+        automake \
+        autoconf \
+        libtool \
+	m4 \
+	pkg-config \
+        ca-certificates \
+        python && \
+    rm -rf /var/lib/apt/lists/*
