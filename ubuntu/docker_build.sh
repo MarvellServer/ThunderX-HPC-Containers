@@ -20,16 +20,10 @@ function build_component () {
 function build_benchmark () {
 	local COMPONENT=$1
 	local TAG=$2
-	local MINIMIZE=$3
-	if [ "$MINIMIZE" == "YES" ]; then
-		BUILDARGS="--build-arg finalimage=minimalimage"
-	else
-		BUILDARGS="--build-arg finalimage=fullimage"
-	fi
 	CMD="docker build \
 		-f Dockerfile.$APP_NAME.$TOOLCHAIN \
 		-t ubuntu/$TOOLCHAIN/$COMPONENT:$TAG \
-		$BUILDARGS ."
+		."
 	echo $CMD >> build.sh
 	$CMD || exit 
 }
@@ -44,14 +38,10 @@ cp Dockerfile.${APP_NAME}.$TOOLCHAIN build
 cp -r data build
 cd build
 
-build_component utils
-for comp in base $COMPONENTS; do
+for comp in base utils $COMPONENTS; do
 	build_component $comp
-	if [ "$MINIMIZE" == "YES" ]; then
-		build_component ${comp}_minimal
-	fi
 done
-build_benchmark $APP_NAME $APP_TAG $MINIMIZE
+build_benchmark $APP_NAME $APP_TAG
 
 echo "##########################################################################"
 echo Run the following command to run the docker
