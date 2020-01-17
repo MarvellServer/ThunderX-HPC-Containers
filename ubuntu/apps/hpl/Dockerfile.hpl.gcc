@@ -1,12 +1,12 @@
-ARG     base
-FROM    ${base}
+FROM    ubuntu/gcc/utils AS hpl
 
-ARG     version
-# Set environment variables
-ENV	PATH=/usr/local/hpl/bin/:${PATH} \
-	CFLAGS="-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math" \
-	BLASLIB=libopenblas.a  \
-	TOPDIR=/tmp/hpl/hpl-2.3
+COPY    --from=ubuntu/gcc/openmpi /usr/local /usr/local
+COPY    --from=ubuntu/gcc/openblas /usr/local /usr/local
+
+# Set Variables and Flags
+ARG	CFLAGS="-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math"
+ARG	BLASLIB=libopenblas.a
+ARG	TOPDIR=/tmp/hpl/hpl-2.3
 
 # Download source
 RUN	mkdir -p /tmp/hpl && \
@@ -29,14 +29,13 @@ RUN	cd /tmp/hpl/hpl-2.3 && \
 COPY	data/HPL.dat /docker/run/
 COPY	data/run.sh /docker/run
 
-# Copy Dockerfile and associated build/run files into /docker/src
-RUN     mkdir -p /docker/src/${version}
-COPY    Dockerfile /docker/src/${version}
-COPY    data /docker/src/${version}
-COPY    docker_run.sh /docker/src/${version}
-COPY    docker_build.sh /docker/src/${version}
-COPY    VERSION /docker/src/${version}
-COPY    BASE /docker/src/${version}
 
+ARG     name_tag
+FROM    ubuntu/gcc/utils
+ENV	PATH=/usr/local/hpl/bin/:${PATH}
+COPY    --from=ubuntu/gcc/openmpi /usr/local /usr/local
+COPY    --from=hpl /usr/local/hpl/bin /usr/local/hpl/bin
+COPY    --from=hpl /docker/run /docker/run
+COPY    ./ docker/src/${name_tag}
 USER    hpc_user
 ENTRYPOINT sh "/docker/run/run.sh"
