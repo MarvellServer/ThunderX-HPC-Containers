@@ -1,9 +1,12 @@
-ARG     base
-FROM    ${base}
+ARG     finalimage
+FROM    ubuntu/gcc/utils AS cp2k
 
-ARG     version
+COPY    --from=ubuntu/gcc/openmpi /usr/local /usr/local
+COPY    --from=ubuntu/gcc/fftw3 /usr/local /usr/local
+COPY    --from=ubuntu/gcc/openblas /usr/local /usr/local
+COPY    --from=ubuntu/gcc/scalapack /usr/local /usr/local
+
 # Set environment variables
-ENV	PATH=/usr/local/cp2k/bin/:${PATH}
 
 ARG	CFLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math -fprefetch-loop-arrays"
 ARG     CC=mpicc
@@ -36,14 +39,24 @@ RUN	cd /tmp/cp2k/cp2k && \
 
 COPY	data/run.sh /docker/run
 
-# Copy Dockerfile and associated build/run files into /docker/src
-RUN     mkdir -p /docker/src/${version}
-COPY    Dockerfile /docker/src/${version}
-COPY    data /docker/src/${version}
-COPY    docker_run.sh /docker/src/${version}
-COPY    docker_build.sh /docker/src/${version}
-COPY    VERSION /docker/src/${version}
-COPY    BASE /docker/src/${version}
+FROM    ubuntu/gcc/base_minimal AS minimalimage
+COPY    --from=ubuntu/gcc/openmpi_minimal /usr/local /usr/local
+COPY    --from=ubuntu/gcc/fftw3_minimal /usr/local/ /usr/local/
+COPY    --from=ubuntu/gcc/scalapack_minimal /usr/local/ /usr/local/
+COPY    --from=ubuntu/gcc/openblas_minimal /usr/local/ /usr/local/
 
+FROM    ubuntu/gcc/base AS fullimage
+COPY    --from=ubuntu/gcc/openmpi /usr/local /usr/local
+COPY    --from=ubuntu/gcc/fftw3 /usr/local/ /usr/local/
+COPY    --from=ubuntu/gcc/scalapack /usr/local/ /usr/local/
+COPY    --from=ubuntu/gcc/openblas /usr/local/ /usr/local/
+
+FROM    ${finalimage}
+ENV     PATH=/usr/local/cp2k/bin/:${PATH}
+RUN     mkdir -p /docker/src
+COPY    --from=cp2k /docker/run /docker/run
+RUN     chown -R hpc_user:hpc_user /docker/run 
+COPY    --from=cp2k /usr/local/cp2k/bin/ /usr/local/cp2k/bin/
+COPY    ./ /docker/src/
 USER    hpc_user
 ENTRYPOINT sh "/docker/run/run.sh"

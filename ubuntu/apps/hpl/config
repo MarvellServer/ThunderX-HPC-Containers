@@ -1,3 +1,5 @@
 APP_NAME=hpl
 APP_TAG=202001_v1
 TOOLCHAIN=gcc
+COMPONENTS="ucx openmpi openblas"
+MINIMIZE=

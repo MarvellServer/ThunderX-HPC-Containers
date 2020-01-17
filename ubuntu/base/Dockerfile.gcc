@@ -1,12 +1,16 @@
+FROM ubuntu:18.04 AS ubuntu_base
+
 ###############################################################################
-# BASE_LITE                                                                   #
+# BASE                                                                        #
 ###############################################################################
-FROM ubuntu:18.04 AS base_lite
+FROM ubuntu_base AS base
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         g++-8 \
         gcc-8 \
 	sudo \
+        libnuma-dev \
+        openssh-client \
         gfortran-8 && \
     rm -rf /var/lib/apt/lists/*
 
@@ -27,15 +31,17 @@ ENV     PATH=/usr/local/bin:${PATH} \
         LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
         LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH
 
-###############################################################################
-# BASE                                                                        #
-###############################################################################
-FROM base_lite AS base
-RUN apt-get update -y && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        libnuma-dev \
-        openssh-client && \
-    rm -rf /var/lib/apt/lists/*
+FROM base AS base_stripped
+# Remove all unnecessary big sized files in the image. These files
+RUN     rm -rf /usr/lib/aarch64-linux-gnu/libpthread.a && \
+	rm -rf /usr/lib/gcc/aarch64-linux-gnu/8/cc1plus && \ 
+	rm -rf /usr/lib/gcc/aarch64-linux-gnu/8/cc1 && \
+	rm -rf /usr/lib/gcc/aarch64-linux-gnu/8/lto1 && \
+	rm -rf /usr/lib/gcc/aarch64-linux-gnu/8/f951
+
+FROM ubuntu_base AS base_minimal
+COPY    --from=base_stripped /usr /usr
+COPY    --from=base_stripped /etc /etc
 
 ###############################################################################
 # UTILS                                                                       #
@@ -50,7 +56,8 @@ RUN apt-get update -y && \
         libtool \
 	m4 \
 	pkg-config \
-        ca-certificates && \
+        ca-certificates \
+        python && \
     rm -rf /var/lib/apt/lists/*
 
 ###############################################################################
@@ -67,6 +74,13 @@ RUN mkdir -p /tmp/ucx && \
     make -j64 && make install -j64 && \
     rm -rf /tmp/ucx
 
+FROM ucx AS ucx_stripped
+RUN  cd /usr/local && rm -rf include games man share src && \
+     (find . -name "*.a" | xargs -n1 rm) || exit 0
+
+FROM ubuntu_base AS ucx_minimal
+COPY --from=ucx_stripped /usr/local /usr/local
+
 ###############################################################################
 # OPENMPI                                                                     #
 ###############################################################################
@@ -81,6 +95,13 @@ RUN mkdir -p /tmp/openmpi && \
     make -j && make install -j && \
     rm -rf /tmp/openmpi
 
+FROM openmpi AS openmpi_stripped
+RUN  cd /usr/local && rm -rf include games man share src && \
+     (find . -name "*.a" | xargs -n1 rm) || exit 0
+
+FROM ubuntu_base AS openmpi_minimal
+COPY --from=openmpi_stripped /usr/local /usr/local
+
 ###############################################################################
 # OPENBLAS                                                                    #
 ###############################################################################
@@ -94,6 +115,13 @@ RUN mkdir -p /tmp/openblas && \
     make TARGET=THUNDERX2T99 CC=gcc PREFIX=/usr/local install && \
     rm -rf /tmp/openblas
 
+FROM openblas AS openblas_stripped
+RUN  cd /usr/local && rm -rf include games man share src && \
+     (find . -name "*.a" | xargs -n1 rm) || exit 0
+
+FROM ubuntu_base AS openblas_minimal
+COPY --from=openblas_stripped /usr/local /usr/local
+
 ###############################################################################
 # CMAKE                                                                       #
 ###############################################################################
@@ -106,10 +134,18 @@ RUN mkdir -p /tmp/cmake && \
     make install && \
     rm -rf /tmp/cmake
 
+FROM cmake AS cmake_stripped
+RUN  cd /usr/local && rm -rf include games man share src && \
+     (find . -name "*.a" | xargs -n1 rm) || exit 0
+
+FROM ubuntu_base AS cmake_minimal
+COPY --from=cmake_stripped /usr/local /usr/local
+
 ###############################################################################
 # FFTW3                                                                       #
 ###############################################################################
 FROM utils AS fftw3
+COPY --from=openmpi /usr/local /usr/local
 RUN mkdir -p /tmp/fftw3 && \
     cd /tmp/fftw3 && \
     wget http://www.fftw.org/fftw-3.3.8.tar.gz && \
@@ -120,12 +156,20 @@ RUN mkdir -p /tmp/fftw3 && \
     ../fftw-3.3.8/configure --prefix=/usr/local --enable-neon --enable-fma --enable-generic-simd128 --enable-armv8-cntvct-el0 --enable-mpi --enable-openmp --enable-threads --enable-shared --enable-static --enable-fortran --enable-single && make -j && make install && cd .. && \
      rm -rf /tmp/fftw3
 
+FROM fftw3 AS fftw3_stripped
+RUN  cd /usr/local && rm -rf include games man share src && \
+     (find . -name "*.a" | xargs -n1 rm) || exit 0
+
+FROM ubuntu_base AS fftw3_minimal
+COPY --from=fftw3_stripped /usr/local /usr/local
 
 ###############################################################################
 # SCALAPACK                                                                   #
 ###############################################################################
 FROM utils AS scalapack
 COPY --from=openblas /usr/local /usr/local
+COPY --from=openmpi /usr/local /usr/local
+COPY --from=cmake /usr/local /usr/local
 RUN mkdir -p /tmp/scalapack && \
     cd /tmp/scalapack && \
     wget https://github.com/Reference-ScaLAPACK/scalapack/archive/v2.1.0.tar.gz && \
@@ -144,3 +188,9 @@ RUN mkdir -p /tmp/scalapack && \
     make -j64 && make install && \
     rm -rf /tmp/scalapack
 
+FROM scalapack AS scalapack_stripped
+RUN  cd /usr/local && rm -rf include games man share src && \
+     (find . -name "*.a" | xargs -n1 rm) || exit 0
+
+FROM ubuntu_base AS scalapack_minimal
+COPY --from=scalapack_stripped /usr/local /usr/local

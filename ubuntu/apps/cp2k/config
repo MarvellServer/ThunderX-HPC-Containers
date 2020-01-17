@@ -1,0 +1,5 @@
+APP_NAME=cp2k
+APP_TAG=202001_v1
+TOOLCHAIN=gcc
+COMPONENTS="ucx cmake openmpi fftw3 openblas scalapack"
+MINIMIZE=YES
