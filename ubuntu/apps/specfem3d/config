@@ -1,0 +1,4 @@
+APP_NAME=specfem3d
+APP_TAG=202001_v1
+TOOLCHAIN=gcc
+COMPONENTS="base utils ucx openmpi"

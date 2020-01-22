@@ -1,0 +1,82 @@
+###############################################################################
+# SPECFEM3D                                                                  #
+# Maintainer: Parijat Shukla (email: pshukla@marvell.com)
+###############################################################################
+FROM    utils AS specfem3d
+
+COPY    --from=openmpi	 /usr/local 	/usr/local
+
+RUN 	apt-get update	&& \
+ 	ldconfig
+
+# Create necessary directories
+RUN     mkdir -p /docker/run/ && \
+	mkdir -p /docker/run/DATA && \
+	mkdir -p /docker/run/bin  && \
+        mkdir -p /docker/src/ && \
+        mkdir -p /tmp/specfem3d
+                 
+
+# Download source:
+RUN	cd /tmp/specfem3d && \
+        git clone  https://github.com/geodynamics/specfem3d_globe.git
+
+# configure:
+RUN	cd  /tmp/specfem3d/specfem3d_globe  && \
+#        ./configure --enable-vectorization "FCFLAGS=  -std=gnu  -lstdc++ -lgfortran -O3" "CFLAGS=-O3"
+        ./configure --enable-vectorization "FCFLAGS=  -std=gnu  -lstdc++ -lgfortran -O3" "CFLAGS=-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math"
+# copy Makefile:
+COPY	data/Makefile.gold /tmp/specfem3d/specfem3d_globe/Makefile && \
+	data/go_mesher_solver_pbs.bash /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/. 	&& \
+ 	data/run_this_example.sh       /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/.	&& \
+ 	data/Par_file.8x8              /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/Par_file 
+
+# Build SPECFEM3D:
+RUN	cd /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast && \ 
+	mkdir -p DATABASES_MPI && mkdir -p OUTPUT_FILES && \ 
+    	rm -rf DATABASES_MPI/* && rm -rf OUTPUT_FILES/* && \
+    	cd ../../ 					&& \
+    	cp EXAMPLES/regional_MiddleEast/DATA/Par_file DATA/Par_file && \
+	make clean && \
+	make xmeshfem3D && \
+	make xspecfem3D
+
+# Copy Dockerfile, run scripts and datasets
+COPY    data/go_mesher_solver_pbs.bash  /docker/run/ 	&& \
+	data/run_this_example.sh 	/docker/run/
+# copy other auxillary files:
+RUN 	cp -r /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/CMTSOLUTION /docker/run/DATA/.	&& \
+	cp    /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/Par_file /docker/run/DATA/.	&& \
+ 	cp -r /tmp/specfem3d/specfem3d_globe/DATA/crust2.0    /docker/run/DATA/.	&& \
+ 	cp -r /tmp/specfem3d/specfem3d_globe/DATA/QRFSI12     /docker/run/DATA/.	&& \
+ 	cp /tmp/specfem3d/specfem3d_globe/DATA/STATIONS       /docker/run/DATA/.	&& \
+ 	cp -r /tmp/specfem3d/specfem3d_globe/DATA/s362ani     /docker/run/DATA/.	&& \
+ 	cp -r /tmp/specfem3d/specfem3d_globe/DATA/topo_bathy  /docker/run/DATA/.	&& \
+ 	cp /tmp/specfem3d/specfem3d_globe/bin/xmeshfem3D	/docker/run/bin/.	&& \
+ 	cp /tmp/specfem3d/specfem3d_globe/bin/xspecfem3D	/docker/run/bin/.
+
+COPY    Dockerfile  	/docker/src/	&& \
+	data/run.sh 	/docker/run/	
+
+RUN 	mkdir -p /docker/run/DATABASES_MPI	&& \
+	mkdir -p /docker/run/OUTPUT_FILES	&& \
+	cp /docker/run/DATA/Par_file 	/docker/run/OUTPUT_FILES/	&& \
+	cp /docker/run/DATA/STATIONS  	/docker/run/OUTPUT_FILES/	&& \
+	cp /docker/run/DATA/CMTSOLUTION /docker/run/OUTPUT_FILES/	
+
+
+FROM    base
+COPY    --from=openmpi /usr/local 		/usr/local
+ENV     PATH=/docker/run/bin/:${PATH}
+COPY    --from=specfem3d /docker/run 		/docker/run
+COPY    ./ 	docker/src
+RUN     chown -R hpc_user:hpc_user /docker
+USER    hpc_user
+
+# commenting out its working only with root privs:
+#RUN     groupadd -r hpc_user && useradd -r -g hpc_user hpc_user
+#USER    hpc_user
+
+#ENTRYPOINT sh "/run.sh"
+ENTRYPOINT sh "/docker/run/run.sh"
+ 
