@@ -22,7 +22,7 @@ export HACC_MPI_CXXFLAGS="$OPT -std=c++98"
 
 export FFTW_WRAPPER=none
 export FFTW_MAJOR_VERSION=3
-export FFTW_HOME=/us/local
+export FFTW_HOME=/usr/local
 export FFTW_INCLUDE=$FFTW_HOME/include
 
 export USE_SERIAL_COSMO=1
