@@ -1,0 +1,16 @@
+###############################################################################
+# CUDA                                                                        #
+###############################################################################
+FROM utils AS cuda
+COPY data/cuda-repo-ubuntu1804-10-2-local-10.2.107-435.17.01_1.0-1_arm64.deb /
+
+RUN  wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin && \
+     apt-get update && \
+     apt-get install -y gnupg && \
+     mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+     dpkg -i /cuda-repo-ubuntu1804-10-2-local-10.2.107-435.17.01_1.0-1_arm64.deb && \
+     apt-key add /var/cuda-repo-10-2-local-10.2.107-435.17.01/7fa2af80.pub && \
+     apt-get update && \
+     apt-get install -y cuda-cudart-10-2 cuda-compat-10-2 cuda-libraries-10-2 cuda-nvtx-10-2 \
+                        cuda-nvml-dev-10-2 cuda-command-line-tools-10-2 cuda-libraries-dev-10-2 \
+                        cuda-minimal-build-10-2 libnvidia-compute-435
