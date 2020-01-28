@@ -1,0 +1,21 @@
+###############################################################################
+# HDF5                                                                        #
+###############################################################################
+FROM utils AS hdf5
+COPY --from=ucx /usr/local /usr/local
+COPY --from=openmpi /usr/local /usr/local
+COPY --from=cmake /usr/local /usr/local
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90
+
+RUN mkdir -p /tmp/hdf5 && \
+    cd /tmp/hdf5 && \
+    wget https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/src/hdf5-1.10.6.tar.gz && \
+    tar -zxf hdf5-1.10.6.tar.gz && \
+    cd hdf5-1.10.6 && \
+    ./configure --enable-parallel --enable-fortran --prefix=/usr/local && \
+    make -j && \
+    make install
+
