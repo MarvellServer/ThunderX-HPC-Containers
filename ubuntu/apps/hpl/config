@@ -1,4 +1,4 @@
+APP_TYPE=hpc
 APP_NAME=hpl
-APP_TAG=202001_v1
 TOOLCHAIN=gcc
-COMPONENTS="base utils ucx openmpi openblas"
+COMPONENTS="base devel ucx openmpi openblas runtime"

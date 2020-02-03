@@ -4,29 +4,13 @@
 FROM ubuntu:18.04 AS base
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        g++-8 \
-        gcc-8 \
-	sudo \
-        libnuma-dev \
-        openssh-client \
-        gfortran-8 && \
+	sudo && \
     rm -rf /var/lib/apt/lists/*
 
-RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
-    update-alternatives --install /usr/bin/g++ g++ $(which g++-8) 30 && \
-    update-alternatives --install /usr/bin/gfortran gfortran $(which gfortran-8) 30 && \
-    update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
-
-# Setup hpc_user and give sudo permissions without password
-RUN     groupadd -r hpc_user && \
-        useradd -r -g hpc_user hpc_user && \
-        usermod -aG sudo hpc_user && \
+# Setup guest and give sudo permissions without password
+RUN     groupadd -r guest && \
+        useradd -r -g guest guest && \
+        usermod -aG sudo guest && \
         sed -i '26d' /etc/sudoers && \
         sed -i '26i\%sudo   ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers
-
-# Setup environment paths
-ENV     PATH=/usr/local/bin:${PATH} \
-        LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
-        LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
-	CC=gcc CXX=g++ FC=gfortran
 

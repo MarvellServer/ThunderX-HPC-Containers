@@ -1,7 +1,7 @@
 ###############################################################################
 # OPENBLAS                                                                    #
 ###############################################################################
-FROM utils AS openblas
+FROM devel AS openblas
 RUN mkdir -p /tmp/openblas && \
     cd /tmp/openblas && \
     wget https://github.com/xianyi/OpenBLAS/archive/v0.3.3.tar.gz && \

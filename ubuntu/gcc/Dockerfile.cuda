@@ -1,7 +1,7 @@
 ###############################################################################
 # CUDA                                                                        #
 ###############################################################################
-FROM utils AS cuda
+FROM devel AS cuda
 COPY data/cuda-repo-ubuntu1804-10-2-local-10.2.107-435.17.01_1.0-1_arm64.deb /
 
 RUN  wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin && \

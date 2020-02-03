@@ -1,4 +1,4 @@
+APP_TYPE=hpc
 APP_NAME=cp2k
-APP_TAG=202001_v1
 TOOLCHAIN=gcc
-COMPONENTS="base utils ucx cmake openmpi fftw3 openblas scalapack"
+COMPONENTS="base devel ucx cmake openmpi fftw3 openblas scalapack runtime"

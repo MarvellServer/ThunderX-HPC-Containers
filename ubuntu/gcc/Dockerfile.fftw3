@@ -1,7 +1,7 @@
 ###############################################################################
 # FFTW3                                                                       #
 ###############################################################################
-FROM utils AS fftw3
+FROM devel AS fftw3
 COPY --from=openmpi /usr/local /usr/local
 RUN mkdir -p /tmp/fftw3 && \
     cd /tmp/fftw3 && \

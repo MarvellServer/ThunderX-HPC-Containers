@@ -42,5 +42,5 @@ COPY    docker_build.sh /docker/src/${version}
 COPY    VERSION /docker/src/${version}
 COPY    BASE /docker/src/${version}
 
-USER    hpc_user
+USER    guest
 ENTRYPOINT      sh "/docker/run/run.sh"

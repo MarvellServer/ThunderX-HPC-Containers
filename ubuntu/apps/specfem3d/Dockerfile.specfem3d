@@ -1,8 +1,7 @@
 ###############################################################################
-# SPECFEM3D                                                                  #
-# Maintainer: Parijat Shukla (email: pshukla@marvell.com)
+# SPECFEM3D                                                                   #
 ###############################################################################
-FROM    utils AS specfem3d
+FROM    devel AS specfem3d
 
 COPY    --from=openmpi	 /usr/local 	/usr/local
 
@@ -23,13 +22,15 @@ RUN	cd /tmp/specfem3d && \
 
 # configure:
 RUN	cd  /tmp/specfem3d/specfem3d_globe  && \
-#        ./configure --enable-vectorization "FCFLAGS=  -std=gnu  -lstdc++ -lgfortran -O3" "CFLAGS=-O3"
         ./configure --enable-vectorization "FCFLAGS=  -std=gnu  -lstdc++ -lgfortran -O3" "CFLAGS=-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math"
-# copy Makefile:
-COPY	data/Makefile.gold /tmp/specfem3d/specfem3d_globe/Makefile && \
-	data/go_mesher_solver_pbs.bash /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/. 	&& \
- 	data/run_this_example.sh       /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/.	&& \
- 	data/Par_file.8x8              /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/Par_file 
+#        ./configure --enable-vectorization "FCFLAGS=  -std=gnu  -lstdc++ -lgfortran -O3" "CFLAGS=-O3"
+
+
+# copy Makefile
+COPY	data/Makefile.gold /tmp/specfem3d/specfem3d_globe/Makefile
+COPY	data/go_mesher_solver_pbs.bash /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/.  
+COPY 	data/run_this_example.sh       /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/.
+COPY 	data/Par_file.8x8              /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/Par_file 
 
 # Build SPECFEM3D:
 RUN	cd /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast && \ 
@@ -42,8 +43,9 @@ RUN	cd /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast && \
 	make xspecfem3D
 
 # Copy Dockerfile, run scripts and datasets
-COPY    data/go_mesher_solver_pbs.bash  /docker/run/ 	&& \
-	data/run_this_example.sh 	/docker/run/
+COPY    data/go_mesher_solver_pbs.bash  /docker/run/
+COPY	data/run_this_example.sh 	/docker/run/
+
 # copy other auxillary files:
 RUN 	cp -r /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/CMTSOLUTION /docker/run/DATA/.	&& \
 	cp    /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/Par_file /docker/run/DATA/.	&& \
@@ -55,8 +57,9 @@ RUN 	cp -r /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/CMTS
  	cp /tmp/specfem3d/specfem3d_globe/bin/xmeshfem3D	/docker/run/bin/.	&& \
  	cp /tmp/specfem3d/specfem3d_globe/bin/xspecfem3D	/docker/run/bin/.
 
-COPY    Dockerfile  	/docker/src/	&& \
-	data/run.sh 	/docker/run/	
+COPY    Dockerfile  	/docker/src/
+COPY    data  	/docker/src/data
+COPY	data/run.sh 	/docker/run/	
 
 RUN 	mkdir -p /docker/run/DATABASES_MPI	&& \
 	mkdir -p /docker/run/OUTPUT_FILES	&& \
@@ -65,18 +68,16 @@ RUN 	mkdir -p /docker/run/DATABASES_MPI	&& \
 	cp /docker/run/DATA/CMTSOLUTION /docker/run/OUTPUT_FILES/	
 
 
-FROM    base
+FROM    runtime
+LABEL   MAINTAINER="Parijat Shukla"
+LABEL   MAINTAINER_EMAIL="pshukla@marvell.com"
+
 COPY    --from=openmpi /usr/local 		/usr/local
 ENV     PATH=/docker/run/bin/:${PATH}
 COPY    --from=specfem3d /docker/run 		/docker/run
 COPY    ./ 	docker/src
-RUN     chown -R hpc_user:hpc_user /docker
-USER    hpc_user
+RUN     chown -R guest:guest /docker
+USER    guest
 
-# commenting out its working only with root privs:
-#RUN     groupadd -r hpc_user && useradd -r -g hpc_user hpc_user
-#USER    hpc_user
-
-#ENTRYPOINT sh "/run.sh"
 ENTRYPOINT sh "/docker/run/run.sh"
  

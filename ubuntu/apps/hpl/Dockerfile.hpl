@@ -1,7 +1,7 @@
 ###############################################################################
 # HPL                                                                         #
 ###############################################################################
-FROM    utils AS hpl
+FROM    devel AS hpl
 
 COPY    --from=openmpi /usr/local /usr/local
 COPY    --from=openblas /usr/local /usr/local
@@ -33,11 +33,15 @@ COPY	data/HPL.dat /docker/run/
 COPY	data/run.sh /docker/run
 
 
-FROM    base
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   HPL_VERSION="hpl-2.3"
+
 COPY    --from=openmpi /usr/local /usr/local
 ENV	PATH=/usr/local/hpl/bin/:${PATH}
 COPY    --from=hpl /usr/local/hpl/bin /usr/local/hpl/bin
 COPY    --from=hpl /docker/run /docker/run
 COPY    ./ docker/src
-USER    hpc_user
+USER    guest
 ENTRYPOINT sh "/docker/run/run.sh"

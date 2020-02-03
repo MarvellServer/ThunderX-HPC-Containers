@@ -1,0 +1,93 @@
+###############################################################################
+# QMCPACK                                                                     #
+###############################################################################
+FROM    devel AS qmcpack
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+COPY    --from=boost /usr/local /usr/local
+COPY    --from=hdf5 /usr/local /usr/local
+
+# Set Variables and Flags
+ARG	CFLAGS="-O3 -g -ffast-math -mcpu=thunderx2t99 -march=armv8.1-a+lse -fopenmp -fprefetch-loop-arrays -funroll-all-loops"
+ARG     CC=mpicc
+ARG     CXX=mpicxx
+ARG     FC=mpif90
+
+RUN apt-get update -y && \
+       DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libxml2 libxml2-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN     mkdir -p /tmp/qmcpack && cd /tmp/qmcpack && \
+        wget --no-check-certificate https://github.com/QMCPACK/qmcpack/archive/v3.7.0.tar.gz && \
+	tar xf v3.7.0.tar.gz
+
+RUN     mkdir -p /tmp/qmcpack/NiO-benchmark
+COPY    ./data/h5files /tmp/qmcpack/NiO-benchmark/NiO
+
+RUN     mkdir -p /tmp/qmcpack/qmcpack-3.7.0/build && \
+        cd /tmp/qmcpack/qmcpack-3.7.0/build && \
+	cmake -Wno-dev \
+		-DCMAKE_BUILD_TYPE=None \
+		-DCMAKE_CXX_FLAGS="$CFLAGS "  \
+		-DCMAKE_C_FLAGS="$CFLAGS " \
+		-DCMAKE_CXX_COMPILER=mpicxx \
+		-DCMAKE_C_COMPILER=mpicc \
+		-DHAVE_SINCOS=1 \
+		-DBOOST_ROOT=/usr/local \
+		-DHDF5_ROOT=/usr/local \
+		-DQMC_DATA=/tmp/qmcpack/NiO-benchmark \
+		-DENABLE_TIMERS=1 \
+		-DENABLE_SOA=1 \
+		-DBLAS_LIBRARIES=/usr/local/lib/libopenblas.so \
+		-DLAPACK_LIBRARIES=/usr/local/lib/libopenblas.so \
+		-DFFTW_LIBRARIES=/usr/local/lib/libfftw3.so \
+		-DFFTW_HOME=/usr/local \
+		-DCMAKE_INSTALL_PREFIX=/usr/local/qmcpack \
+		../
+
+RUN	cd /tmp/qmcpack/qmcpack-3.7.0/build && \
+	make VERBOSE=1 -j && \
+        make VERBOSE=1 install -j
+
+
+FROM    runtime
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
+LABEL   QMCPACK_VERSION="qmcpack-3.7.0"
+
+RUN     apt-get update -y && \
+           DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+              libxml2 && \
+        rm -rf /var/lib/apt/lists/*
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+COPY    --from=boost /usr/local /usr/local
+COPY    --from=hdf5 /usr/local /usr/local
+
+RUN     mkdir -p /docker/run
+COPY    --from=qmcpack /tmp/qmcpack/qmcpack-3.7.0/build/tests/performance/NiO /docker/run/NiO
+RUN     rm /docker/run/NiO/Ni.opt.xml && rm /docker/run/NiO/O.xml
+COPY    --from=qmcpack /tmp/qmcpack/qmcpack-3.7.0/tests/performance/NiO/Ni.opt.xml /docker/run/NiO/Ni.opt.xml
+COPY    --from=qmcpack /tmp/qmcpack/qmcpack-3.7.0/tests/performance/NiO/O.xml /docker/run/NiO/O.xml
+COPY    --from=qmcpack /usr/local/qmcpack /usr/local/qmcpack
+COPY    ./data/run.sh /docker/run
+
+# Avoid copying the h5 file into the final image.
+RUN     mkdir -p /docker/src/data/NiO
+COPY    Dockerfile /docker/src
+COPY    docker_run.sh /docker/src
+COPY    docker_build.sh /docker/src
+COPY    data/run.sh /docker/src/data
+
+RUN     chown -R guest:guest /docker/run
+
+USER    guest
+ENV	PATH=/usr/local/qmcpack/bin/:${PATH}
+ENTRYPOINT sh "/docker/run/run.sh"

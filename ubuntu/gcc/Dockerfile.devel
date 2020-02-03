@@ -1,0 +1,38 @@
+###############################################################################
+# DEVEL                                                                       #
+###############################################################################
+FROM base as devel
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	wget \
+        git \
+        automake \
+        autoconf \
+        libtool \
+	m4 \
+	pkg-config \
+        ca-certificates \
+        python \ 
+	python-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++-8 \
+        gcc-8 \
+	sudo \
+        libnuma-dev \
+        openssh-client \
+        gfortran-8 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
+    update-alternatives --install /usr/bin/g++ g++ $(which g++-8) 30 && \
+    update-alternatives --install /usr/bin/gfortran gfortran $(which gfortran-8) 30 && \
+    update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
+
+# Setup environment paths
+ENV     PATH=/usr/local/bin:${PATH} \
+        LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
+        LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
+	CC=gcc CXX=g++ FC=gfortran

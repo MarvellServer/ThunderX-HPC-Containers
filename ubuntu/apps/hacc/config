@@ -1,4 +1,4 @@
+APP_TYPE=hpc
 APP_NAME=hacc
-APP_TAG=202001_v1
 TOOLCHAIN=gcc
-COMPONENTS="base utils ucx openmpi fftw3"
+COMPONENTS="base devel ucx openmpi fftw3 runtime"

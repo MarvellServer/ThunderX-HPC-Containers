@@ -1,7 +1,7 @@
 ###############################################################################
 # SCALAPACK                                                                   #
 ###############################################################################
-FROM utils AS scalapack
+FROM devel AS scalapack
 COPY --from=openblas /usr/local /usr/local
 COPY --from=openmpi /usr/local /usr/local
 COPY --from=cmake /usr/local /usr/local

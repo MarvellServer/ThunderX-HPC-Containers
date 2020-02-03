@@ -1,0 +1,15 @@
+###############################################################################
+# RUNTIME                                                                     #
+###############################################################################
+FROM base as runtime
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        openssh-client \
+        libgfortran5 \
+        libgomp1 \
+	libnuma1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Setup environment paths
+ENV     PATH=/usr/local/bin:${PATH} \
+        LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH

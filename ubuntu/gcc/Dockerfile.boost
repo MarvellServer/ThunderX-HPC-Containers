@@ -1,0 +1,18 @@
+###############################################################################
+# BOOST                                                                       #
+###############################################################################
+FROM devel AS boost
+RUN mkdir -p /tmp/boost && \
+    cd /tmp/boost && \
+    wget https://dl.bintray.com/boostorg/release/1.72.0/source/boost_1_72_0.tar.gz
+
+RUN cd /tmp/boost && tar -xopf boost_1_72_0.tar.gz && \
+    cd boost_1_72_0 && \
+    ./bootstrap.sh --prefix=/usr/local --with-libraries=all
+
+
+RUN cd /tmp/boost/boost_1_72_0 &&    ./b2 -j28 \
+	cxxflags="-g -O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math -I/usr/include/python2.7" \
+	cflags="-g -O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math -I/usr/include/python2.7"
+
+RUN cd /tmp/boost/boost_1_72_0 &&    ./b2 -j28 --prefix=/usr/local install

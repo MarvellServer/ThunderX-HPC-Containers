@@ -1,4 +1,8 @@
-FROM    utils AS cp2k
+###############################################################################
+# CP2K                                                                        #
+###############################################################################
+
+FROM    devel AS cp2k
 
 COPY    --from=openmpi /usr/local /usr/local
 COPY    --from=fftw3 /usr/local /usr/local
@@ -38,20 +42,21 @@ RUN	cd /tmp/cp2k/cp2k && \
 
 COPY	data/run.sh /docker/run
 
-FROM    base
-COPY    --from=openmpi /usr/local/bin /usr/local/bin
-COPY    --from=openmpi /usr/local/lib /usr/local/lib
-COPY    --from=fftw3 /usr/local/bin/ /usr/local/bin/
-COPY    --from=fftw3 /usr/local/lib/ /usr/local/lib/
-COPY    --from=scalapack /usr/local/bin/ /usr/local/bin/
-COPY    --from=scalapack /usr/local/lib/ /usr/local/lib/
-COPY    --from=openblas /usr/local/bin/ /usr/local/bin/
-COPY    --from=openblas /usr/local/lib/ /usr/local/lib/
+FROM    runtime
+
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
+LABEL   CP2K_VERSION="v6.1.0"
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=scalapack /usr/local /usr/local
+COPY    --from=openblas /usr/local/ /usr/local
 ENV     PATH=/usr/local/cp2k/bin/:${PATH}
 RUN     mkdir -p /docker/src
 COPY    --from=cp2k /docker/run /docker/run
-RUN     chown -R hpc_user:hpc_user /docker/run 
+RUN     chown -R guest:guest /docker/run 
 COPY    --from=cp2k /usr/local/cp2k/bin/ /usr/local/cp2k/bin/
 COPY    ./ /docker/src/
-USER    hpc_user
+USER    guest
 ENTRYPOINT sh "/docker/run/run.sh"
