@@ -1,0 +1,27 @@
+&invar
+  nthreads=2
+  npey=8
+  npez=8
+  ichunk=16
+  ndimen=3
+  nx=1024
+  lx=1
+  ny=16
+  ly=1
+  nz=16
+  lz=1
+  nmom=2
+  ng=32
+  nang=136
+  mat_opt=0
+  src_opt=0
+  timedep=1
+  it_det=0
+  tf=0.1
+  nsteps=1
+  iitm=5
+  oitm=5
+  epsi=1.E-4
+  fluxp=0
+  scatp=0
+/

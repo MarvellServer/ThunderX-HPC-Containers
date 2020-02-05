@@ -1,0 +1,46 @@
+###############################################################################
+# SNAP                                                                        #
+###############################################################################
+FROM    devel AS snap
+
+COPY  --from=ucx /usr/local /usr/local
+COPY  --from=openmpi /usr/local /usr/local
+
+
+#Creating the required directories
+RUN   mkdir -p /tmp/snap && \
+      mkdir -p /docker/src/ && \
+      mkdir -p /docker/run && \
+      mkdir -p /usr/local/snap/bin
+
+ENV   PATH=/usr/local/snap/bin:${PATH}
+
+# COPY Makefile and input file
+COPY  data/Makefile /
+COPY  data/utils.f90 /
+COPY  data/test.input /docker/run/
+COPY  data/run.sh /docker/run/
+
+# Download and BUILD Source
+RUN   cd /tmp/snap && \
+      wget https://www.nersc.gov/assets/Trinity--NERSC-8-RFP/Benchmarks/June13/SNAPJune13.tar.gz && \
+      tar -zxvf  SNAPJune13.tar.gz && rm -rf SNAPJune13.tar.gz && \
+      cd SNAPJune13/src && \
+      cp -r /Makefile . && \
+      cp -r /utils.f90 . && \
+      make snap && \
+      cp -r snap /usr/local/snap/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   SNAP_VERSION="SNAPJune13"
+
+COPY    --from=openmpi /usr/local /usr/local
+ENV     PATH=/usr/local/snap/bin/:${PATH}
+COPY    --from=snap /usr/local/snap/bin /usr/local/snap/bin
+COPY    --from=snap /docker/run /docker/run
+COPY    ./ docker/src
+USER    guest
+RUN     sudo chown -R guest:guest /docker/run/
+ENTRYPOINT  sh "/docker/run/run.sh"
