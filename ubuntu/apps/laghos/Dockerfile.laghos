@@ -1,0 +1,94 @@
+###############################################################################
+# Laghos / CTS2                                                               #
+###############################################################################
+FROM    devel AS laghos
+
+COPY  --from=ucx /usr/local /usr/local
+COPY  --from=openmpi /usr/local /usr/local
+COPY  --from=openblas /usr/local /usr/local
+COPY  --from=cmake /usr/local /usr/local
+
+# install additional packages
+RUN apt-get -y install wget
+
+# fetch : all sources and extract
+RUN   mkdir -p /tmp/laghos && \
+      wget -P /tmp/laghos https://computation.llnl.gov/projects/hypre-scalable-linear-solvers-multigrid-methods/download/hypre-2.10.0b.tar.gz && \
+      wget -P /tmp/laghos http://glaros.dtc.umn.edu/gkhome/fetch/sw/metis/OLD/metis-4.0.3.tar.gz && \
+      wget -P /tmp/laghos https://github.com/LLNL/RAJA/releases/download/v0.7.0/RAJA-0.7.0.tar.gz && \
+      wget -P /tmp/laghos https://github.com/mfem/mfem/archive/laghos-cts2.tar.gz && \
+      wget -P /tmp/laghos https://github.com/CEED/Laghos/archive/cts2.tar.gz && \
+      cd /tmp/laghos && \
+      tar -xzvf hypre-2.10.0b.tar.gz && \
+      tar -xzvf metis-4.0.3.tar.gz && \
+      tar -xzvf RAJA-0.7.0.tar.gz && \
+      tar -xzvf laghos-cts2.tar.gz && \
+      tar -xzvf cts2.tar.gz
+
+# define build env
+ARG   CFLAGS="-w -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse"
+ARG   CXXFLAGS="-w -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse"
+
+# build : hypre
+RUN   cd /tmp/laghos/hypre-2.10.0b/src/ && \
+      CC=mpicc CXX=mpicxx ./configure --disable-fortran --enable-shared --build=aarch64-linux-gnu --host=aarch64-linux-gnu --target=aarch64-linux-gnu --with-blas --with-blas-lib-dirs=/usr/local/lib --with-blas-libs="openblas" --with-lapack --with-lapack-lib-dirs=/usr/local/lib --with-lapack-libs="openblas" && \
+      make -j65
+
+# build : metis
+RUN   cd /tmp/laghos/metis-4.0.3/ && \
+      sed -i "s/CC = .*/CC = gcc/" Makefile.in && \
+      sed -i "s/OPTFLAGS = .*/OPTFLAGS = ${CFLAGS}/" Makefile.in && \
+      make && \
+      cd .. && \
+      mv metis-4.0.3 metis-4.0
+
+# build : RAJA
+RUN   cd /tmp/laghos/RAJA-0.7.0 && \
+      mkdir build && \
+      cd build && \
+      cmake -Wno-dev -DENABLE_OPENMP=OFF -DCMAKE_INSTALL_PREFIX=../../raja ../ && \
+      make -j65 && \
+      make install
+
+# build : MFEM
+RUN   cd /tmp/laghos/mfem-laghos-cts2/ && \
+      make parallel MFEM_USE_RAJA=YES -j65 && \
+      cd .. && \
+      mv mfem-laghos-cts2 mfem
+
+# build : Laghos
+RUN   cd /tmp/laghos/Laghos-cts2/ && \
+      make -j65
+
+# install
+RUN   mkdir -p /usr/local/laghos/bin
+RUN   mkdir -p /usr/local/laghos/lib
+RUN   cp /tmp/laghos/Laghos-cts2/laghos /usr/local/laghos/bin
+RUN   cp /tmp/laghos/hypre-2.10.0b/src/hypre/lib/libHYPRE*.so /usr/local/laghos/lib/
+
+# copy run script and input files
+RUN   mkdir -p /docker/run
+COPY  data/run.sh /docker/run/
+RUN   cp -r /tmp/laghos/Laghos-cts2/data /docker/run/
+
+# copy dockerfile and build files to docker/src
+FROM  runtime
+COPY  --from=ucx /usr/local /usr/local
+COPY  --from=openmpi /usr/local /usr/local
+COPY  --from=openblas /usr/local /usr/local
+COPY  --from=laghos /usr/local/laghos/bin /usr/local/laghos/bin
+COPY  --from=laghos /usr/local/laghos/lib /usr/local/laghos/lib
+COPY  --from=laghos /docker/run /docker/run
+COPY  ./ docker/src
+ENV   PATH /usr/local/laghos/bin:${PATH}
+ENV   LD_LIBRARY_PATH /usr/local/laghos/lib:${LD_LIBRARY_PATH}
+
+# author
+LABEL  MAINTAINER="Srikanth Yalavarthi"
+LABEL  MAINTAINER_EMAIL="syalavarthi@marvell.com"
+LABEL  LAGHOS_VERSION="Laghos / CTS2"
+
+# launch
+USER        guest
+RUN         sudo chown -R guest:guest /docker/run/
+ENTRYPOINT  bash "/docker/run/run.sh"
