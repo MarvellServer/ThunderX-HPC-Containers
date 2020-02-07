@@ -1,0 +1,55 @@
+###############################################################################
+# Quicksilver                                                                 #
+# Maintainer: Parijat Shukla (email: pshukla@marvell.com)		      #
+###############################################################################
+FROM    devel  AS quicksilver
+
+COPY    --from=openmpi	 /usr/local 	/usr/local
+
+RUN 	apt-get update		&& \
+ 	ldconfig
+
+# Create necessary directories
+RUN     mkdir -p /docker/run/ 	  && \
+	mkdir -p /docker/run/bin  && \
+        mkdir -p /docker/src/ && \
+        mkdir -p /tmp/quicksilver
+                 
+
+# Download source:
+RUN	cd /tmp/quicksilver  && \
+        git clone https://github.com/LLNL/Quicksilver.git 
+	 
+
+# configure:
+# copy Makefile:
+COPY	data/Makefile 		       /tmp/quicksilver/Quicksilver/src/.
+COPY 	data/run.sh 		       /tmp/quicksilver/Quicksilver/run.sh				
+
+# Build Quicksilver:
+RUN	cd /tmp/quicksilver/Quicksilver/src  && \ 
+	make clean 	&& \
+	make -j20	&& \
+	sleep 5 	
+
+# Copy Dockerfile, run scripts and datasets
+RUN 	cp 	/tmp/quicksilver/Quicksilver/src/qs			/docker/run/bin/.	&& \
+	cp -r   /tmp/quicksilver/Quicksilver/Examples/CTS2_Benchmark 	/docker/run/.	
+
+COPY	data/run.sh 	/docker/run/	
+
+
+
+FROM    runtime
+LABEL   MAINTAINER="Parijat Shukla"
+LABEL   MAINTAINER_EMAIL="pshukla@marvell.com"
+
+COPY    --from=openmpi 		/usr/local 		/usr/local
+ENV     PATH=/docker/run/bin/:${PATH}
+COPY    --from=quicksilver	/docker/run 		/docker/run
+COPY    ./ 	/docker/src
+RUN     chown -R guest:guest /docker/run
+USER    guest
+
+ENTRYPOINT sh "/docker/run/run.sh"
+ 
