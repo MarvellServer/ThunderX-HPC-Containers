@@ -81,10 +81,7 @@ COPY	/data/run.sh /docker/run/
 COPY	/data/in.tersoff.all.inp /docker/run/
 COPY	/data/in.eam /docker/run/
 COPY	/data/Cu_u3.eam /docker/run/
-
-COPY    Dockerfile /docker/src
-COPY    docker_run.sh /docker/src
-COPY    docker_build.sh /docker/src
+COPY	/data/ /docker/src/data
 
 RUN     chown -R guest:guest /docker/run
 

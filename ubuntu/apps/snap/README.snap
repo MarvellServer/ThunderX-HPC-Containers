@@ -1,0 +1,3 @@
+Run the following command to run SNAP.
+
+docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=10G hpc/cpu/snap:BUILD_VERSION

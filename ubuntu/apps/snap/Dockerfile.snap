@@ -9,7 +9,6 @@ COPY  --from=openmpi /usr/local /usr/local
 
 #Creating the required directories
 RUN   mkdir -p /tmp/snap && \
-      mkdir -p /docker/src/ && \
       mkdir -p /docker/run && \
       mkdir -p /usr/local/snap/bin
 
@@ -40,7 +39,7 @@ COPY    --from=openmpi /usr/local /usr/local
 ENV     PATH=/usr/local/snap/bin/:${PATH}
 COPY    --from=snap /usr/local/snap/bin /usr/local/snap/bin
 COPY    --from=snap /docker/run /docker/run
-COPY    ./ docker/src
+COPY    data/ /docker/src/data
 USER    guest
 RUN     sudo chown -R guest:guest /docker/run/
 ENTRYPOINT  sh "/docker/run/run.sh"

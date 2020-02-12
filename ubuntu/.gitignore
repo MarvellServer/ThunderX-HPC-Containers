@@ -1,4 +1,3 @@
-apps/qmcpack/cpu/data/h5files
 apps/*/build
 apps/*/cpu/build
 apps/*/gpu/build

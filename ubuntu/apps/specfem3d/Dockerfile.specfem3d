@@ -12,7 +12,6 @@ RUN 	apt-get update	&& \
 RUN     mkdir -p /docker/run/ && \
 	mkdir -p /docker/run/DATA && \
 	mkdir -p /docker/run/bin  && \
-        mkdir -p /docker/src/ && \
         mkdir -p /tmp/specfem3d
                  
 
@@ -57,8 +56,6 @@ RUN 	cp -r /tmp/specfem3d/specfem3d_globe/EXAMPLES/regional_MiddleEast/DATA/CMTS
  	cp /tmp/specfem3d/specfem3d_globe/bin/xmeshfem3D	/docker/run/bin/.	&& \
  	cp /tmp/specfem3d/specfem3d_globe/bin/xspecfem3D	/docker/run/bin/.
 
-COPY    Dockerfile  	/docker/src/
-COPY    data  	/docker/src/data
 COPY	data/run.sh 	/docker/run/	
 
 RUN 	mkdir -p /docker/run/DATABASES_MPI	&& \
@@ -75,7 +72,7 @@ LABEL   MAINTAINER_EMAIL="pshukla@marvell.com"
 COPY    --from=openmpi /usr/local 		/usr/local
 ENV     PATH=/docker/run/bin/:${PATH}
 COPY    --from=specfem3d /docker/run 		/docker/run
-COPY    ./ 	docker/src
+COPY    ./data 	/docker/src/data
 RUN     chown -R guest:guest /docker
 USER    guest
 

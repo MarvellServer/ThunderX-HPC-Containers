@@ -3,6 +3,7 @@
 ###############################################################################
 FROM    devel AS qmcpack
 
+COPY    --from=cuda /usr/ /usr/
 COPY    --from=openmpi /usr/local /usr/local
 COPY    --from=openblas /usr/local /usr/local
 COPY    --from=fftw3 /usr/local /usr/local
@@ -37,12 +38,14 @@ RUN     mkdir -p /tmp/qmcpack/qmcpack-3.7.0/build && \
 		-DCMAKE_CXX_COMPILER=mpicxx \
 		-DCMAKE_C_COMPILER=mpicc \
 		-DHAVE_SINCOS=1 \
+		-DQMC_CUDA=yes \
 		-DBOOST_ROOT=/usr/local \
 		-DHDF5_ROOT=/usr/local \
 		-DQMC_DATA=/tmp/qmcpack/NiO-benchmark \
 		-DENABLE_TIMERS=1 \
 		-DENABLE_SOA=1 \
 		-DBLAS_LIBRARIES=/usr/local/lib/libopenblas.so \
+		-DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2 \
 		-DLAPACK_LIBRARIES=/usr/local/lib/libopenblas.so \
 		-DFFTW_LIBRARIES=/usr/local/lib/libfftw3.so \
 		-DFFTW_HOME=/usr/local \

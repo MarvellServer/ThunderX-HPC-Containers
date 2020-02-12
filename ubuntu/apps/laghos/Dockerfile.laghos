@@ -79,7 +79,7 @@ COPY  --from=openblas /usr/local /usr/local
 COPY  --from=laghos /usr/local/laghos/bin /usr/local/laghos/bin
 COPY  --from=laghos /usr/local/laghos/lib /usr/local/laghos/lib
 COPY  --from=laghos /docker/run /docker/run
-COPY  ./ docker/src
+COPY  data/ /docker/src/data
 ENV   PATH /usr/local/laghos/bin:${PATH}
 ENV   LD_LIBRARY_PATH /usr/local/laghos/lib:${LD_LIBRARY_PATH}
 

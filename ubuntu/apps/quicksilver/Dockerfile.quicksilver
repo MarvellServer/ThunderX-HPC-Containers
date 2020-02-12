@@ -12,7 +12,6 @@ RUN 	apt-get update		&& \
 # Create necessary directories
 RUN     mkdir -p /docker/run/ 	  && \
 	mkdir -p /docker/run/bin  && \
-        mkdir -p /docker/src/ && \
         mkdir -p /tmp/quicksilver
                  
 
@@ -47,7 +46,7 @@ LABEL   MAINTAINER_EMAIL="pshukla@marvell.com"
 COPY    --from=openmpi 		/usr/local 		/usr/local
 ENV     PATH=/docker/run/bin/:${PATH}
 COPY    --from=quicksilver	/docker/run 		/docker/run
-COPY    ./ 	/docker/src
+COPY    data/ 	/docker/src/data
 RUN     chown -R guest:guest /docker/run
 USER    guest
 
