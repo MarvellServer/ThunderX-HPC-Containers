@@ -1,6 +1,4 @@
-apps/cp2k/build
-apps/hacc/build
-apps/hpl/build
 apps/qmcpack/cpu/data/h5files
-apps/specfem3d/build
-apps/qmcpack/cpu/build
+apps/*/build
+apps/*/cpu/build
+apps/*/gpu/build

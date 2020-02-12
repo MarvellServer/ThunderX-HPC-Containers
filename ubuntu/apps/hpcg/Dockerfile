@@ -37,7 +37,8 @@ COPY	data/run.sh /docker/run/
 RUN     mkdir -p /docker/src/${version}
 COPY    Dockerfile /docker/src/${version}
 COPY    data /docker/src/${version}
-COPY    docker_run.sh /docker/src/${version}
+COPY    prerequisites.sh /docker/src
+COPY    README /docker/src
 COPY    docker_build.sh /docker/src/${version}
 COPY    VERSION /docker/src/${version}
 COPY    BASE /docker/src/${version}

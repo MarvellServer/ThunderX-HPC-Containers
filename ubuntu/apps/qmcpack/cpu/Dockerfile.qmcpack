@@ -82,8 +82,9 @@ COPY    ./data/run.sh /docker/run
 # Avoid copying the h5 file into the final image.
 RUN     mkdir -p /docker/src/data/h5files
 COPY    Dockerfile /docker/src
-COPY    docker_run.sh /docker/src
 COPY    docker_build.sh /docker/src
+COPY    prerequisites.sh /docker/src
+COPY    README /docker/src
 COPY    data/run.sh /docker/src/data
 
 RUN     chown -R guest:guest /docker/run

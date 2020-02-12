@@ -1,0 +1,5 @@
+The Docker run script expects the file NiO-fcc-supertwist111-supershift000-S32.h5 from https://anl.app.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c/folder/18160688946 to be present in the /docker/run/h5files directory.
+
+Download this file to a host directory. Then run the following command to launch the docker container.
+
+docker run -it -v /hostdir/containing/h5files:/docker/run/h5file --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/qmcpack/cpu:BUILD_VERSION
