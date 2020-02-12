@@ -1,0 +1,93 @@
+###############################################################################
+# LAMMPS                                                                     #
+###############################################################################
+FROM    devel AS lammps
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+
+#Create required directories
+RUN     mkdir -p /docker/run && \
+	mkdir -p /docker/src
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+   	hwloc libhwloc-dev bc && \
+   	rm -rf /var/lib/apt/lists/*
+
+#Download Source code
+RUN	mkdir -p /tmp/lammps && \
+   	cd /tmp/lammps && \
+   	wget https://github.com/lammps/lammps/archive/patch_20Nov2019.tar.gz  && \
+   	tar -zxvf patch_20Nov2019.tar.gz && \
+   	mv lammps-patch_20Nov2019 lammps
+
+RUN	cd /tmp/lammps && \
+   	mkdir -p build_cpu && \
+    	cd build_cpu && \
+    	cmake \
+        -D FFT=FFTW3 \
+        -D FFTW3_INCLUDE_DIRS=-I/usr/local/include \
+        -D FFTW3_LIBRARY=/usr/local/lib/libfftw3.so \
+        -D BUILD_SHARED_LIBS=ON \
+        -D CMAKE_INSTALL_PREFIX=/usr/local/lammps \
+        -D KOKKOS_ARCH=ARMv8-TX2 \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D MPI_C_COMPILER=/usr/local/bin/mpicc \
+        -D MPI_CXX_COMPILER=/usr/local/bin/mpicxx \
+        -D CMAKE_C_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp" \
+        -D CMAKE_CXX_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp" \
+        -D BUILD_MPI=yes \
+        -D PKG_MPIIO=on \
+        -D BUILD_OMP=yes \
+        -D BUILD_LIB=no \
+        -D PKG_USER-REAXC=yes \
+        -D PKG_KSPACE=yes \
+        -D PKG_MOLECULE=yes \
+        -D PKG_REPLICA=yes \
+        -D PKG_RIGID=yes \
+        -D PKG_MISC=yes \
+        -D PKG_MANYBODY=yes \
+        -D PKG_ASPHERE=yes \
+        -D PKG_KOKKOS=yes \
+        -D KOKKOS_ENABLE_HWLOC=yes \
+        ../lammps/cmake && \
+    	make -j  && \
+    	make install
+
+
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   LAMMPS_VERSION="lammps-patch_20Nov2019"
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+   	hwloc libhwloc-dev bc && \
+   	rm -rf /var/lib/apt/lists/*
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+
+COPY	--from=lammps /usr/local/lammps/bin /usr/local/lammps/bin
+COPY	--from=lammps /usr/local/lammps/lib /usr/local/lib
+COPY	--from=lammps /usr/local/lammps/include /usr/local/include
+COPY	/data/run.sh /docker/run/
+COPY	/data/in.tersoff.all.inp /docker/run/
+COPY	/data/in.eam /docker/run/
+COPY	/data/Cu_u3.eam /docker/run/
+
+COPY    Dockerfile /docker/src
+COPY    docker_run.sh /docker/src
+COPY    docker_build.sh /docker/src
+
+RUN     chown -R guest:guest /docker/run
+
+USER    guest
+ENV	PATH=/usr/local/lammps/bin/:${PATH}
+ENTRYPOINT sh "/docker/run/run.sh"
