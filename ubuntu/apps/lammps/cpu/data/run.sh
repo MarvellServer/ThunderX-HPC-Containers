@@ -1,5 +1,10 @@
-cd /docker/run
-INPUT=in.eam
+#!/bin/bash
 
-mpirun -n 64 --bind-to core --map-by core --mca pml ^ucx -x UCX_TLS=sm lmp -k on -sf kk -pk kokkos neigh half neigh/qeq full newton on -var x 8 -var y 8 -var z 6 -in $INPUT 
-#mpirun --allow-run-as-root --hostfile /hostfile -n 128 --bind-to core --map-by core /usr/local/bin/lmp -k on -sf kk -pk kokkos neigh half neigh/qeq full newton on -var x 8 -var y 8 -var z 6 -in $INPUT
+cd /docker/run
+
+if [ "$INPUT" == "in.lj" ]; then
+	mpirun -n 64 --bind-to core --map-by core --mca pml ^ucx -x UCX_TLS=sm lmp -k on -sf kk -pk kokkos neigh full neigh/qeq half newton off neigh/thread off -var x 8 -var y 8 -var z 6 -in in.lj
+else
+	mpirun -n 64 --bind-to core --map-by core --mca pml ^ucx -x UCX_TLS=sm lmp -k on -sf kk -pk kokkos neigh half neigh/qeq full newton on neigh/thread off -var x 8 -var y 8 -var z 6 -in in.reaxc.hns
+fi
+

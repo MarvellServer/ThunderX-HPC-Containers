@@ -4,9 +4,12 @@
 FROM    devel AS lammps
 
 COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=cuda /usr/local /usr/local
 COPY    --from=openblas /usr/local /usr/local
 COPY    --from=fftw3 /usr/local /usr/local
 COPY    --from=cmake /usr/local /usr/local
+
+ENV     PATH=/usr/local/cuda-10.2/bin:$PATH
 
 #Create required directories
 RUN     mkdir -p /docker/run && \
@@ -25,22 +28,22 @@ RUN	mkdir -p /tmp/lammps && \
    	mv lammps-patch_20Nov2019 lammps
 
 RUN	cd /tmp/lammps && \
-   	mkdir -p build_cpu && \
-    	cd build_cpu && \
+   	mkdir -p build_gpu && \
+    	cd build_gpu && \
     	cmake \
         -D FFT=FFTW3 \
         -D FFTW3_INCLUDE_DIRS=-I/usr/local/include \
         -D FFTW3_LIBRARY=/usr/local/lib/libfftw3.so \
         -D BUILD_SHARED_LIBS=ON \
         -D CMAKE_INSTALL_PREFIX=/usr/local/lammps \
-        -D KOKKOS_ARCH=ARMv8-TX2 \
         -D CMAKE_BUILD_TYPE=Release \
         -D MPI_C_COMPILER=/usr/local/bin/mpicc \
         -D MPI_CXX_COMPILER=/usr/local/bin/mpicxx \
+	-D CMAKE_CXX_COMPILER=$(pwd)/../lammps/lib/kokkos/bin/nvcc_wrapper \
         -D CMAKE_C_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp" \
         -D CMAKE_CXX_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp" \
         -D BUILD_MPI=yes \
-        -D PKG_MPIIO=on \
+        -D PKG_MPIIO=no \
         -D BUILD_OMP=yes \
         -D BUILD_LIB=no \
         -D PKG_USER-REAXC=yes \
@@ -51,17 +54,23 @@ RUN	cd /tmp/lammps && \
         -D PKG_MISC=yes \
         -D PKG_MANYBODY=yes \
         -D PKG_ASPHERE=yes \
+	-D PKG_GPU=no \
         -D PKG_KOKKOS=yes \
+        -D KOKKOS_ARCH="ARMv8-TX2;Volta70" \
+	-D KOKKOS_ENABLE_LIBRT=OFF \
+	-D KOKKOS_ENABLE_CUDA=yes \
         -D KOKKOS_ENABLE_HWLOC=yes \
+	-D KOKKOS_ENABLE_PROFILING=OFF \
+	-D KOKKOS_ENABLE_OPENMP=yes \
         ../lammps/cmake && \
     	make -j  && \
     	make install
 
 
 
-FROM    runtime
-LABEL   MAINTAINER="Prince Takkar"
-LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+FROM    cuda
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
 LABEL   LAMMPS_VERSION="lammps-patch_20Nov2019"
 
 RUN	apt-get update -y && \

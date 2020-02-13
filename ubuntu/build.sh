@@ -67,12 +67,15 @@ echo "" > README
 for comp in $COMPONENTS; do
 	if [ -f $LIBDOCKER_DIR/README.${comp} ]; then
 		cat $LIBDOCKER_DIR/README.${comp} >> README
-		echo -e "\n\n" >> README
+		echo -e "\n" >> README
 	fi
 done
 if [ -f $APPDOCKER_DIR/README.${APP_NAME} ]; then
 	cat $APPDOCKER_DIR/README.${APP_NAME} >> README
 else
+	echo "-----" >> README
+	echo "NOTES" >> README
+	echo "-----" >> README
 	echo "Run the following command to run the docker" >> README
 	echo "$DEFAULTRUNCMD" >> README
 fi
@@ -139,6 +142,4 @@ sh docker_build.sh
 # Print the README
 ###############################################################################
 sed -i "s#BUILD_VERSION#$BUILD_VERSION#g" README
-echo "-----------------------------------------------------------------------"
 cat README
-echo "-----------------------------------------------------------------------"
