@@ -2,7 +2,7 @@ cp2k
 hacc
 hpl
 laghos
-lammps
+lammps/cpu
 qmcpack/cpu
 quicksilver
 snap
