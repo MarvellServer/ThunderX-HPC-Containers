@@ -18,6 +18,8 @@ RUN apt-get update -y && \
         g++-8 \
         gcc-8 \
 	sudo \
+	hwloc \
+	libhwloc-dev \
         libnuma-dev \
         openssh-client \
         gfortran-8 && \
