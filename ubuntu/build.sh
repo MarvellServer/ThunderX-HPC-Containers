@@ -38,7 +38,7 @@ DEFAULTRUNCMD="docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm
 # Create the Build Directory tree and copy required data
 ###############################################################################
 mkdir -p $APPBUILD_DIR/data
-cp -r $APPDOCKER_DIR/data/* $APPBUILD_DIR/data/
+cp -r $APPDOCKER_DIR/data/* $APPBUILD_DIR/data || exit 0
 cd $APPBUILD_DIR
 
 
