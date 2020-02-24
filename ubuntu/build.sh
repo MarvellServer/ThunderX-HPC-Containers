@@ -131,12 +131,48 @@ echo $BUILDCMD > docker_build.sh
 sed "s#BUILDDIR#$APPBUILD_DIR#g" prerequisites.sh | sh
 sed -i "s#BUILDDIR#/docker/src#g" prerequisites.sh
 
+###############################################################################
+# Name the reference to the older image
+###############################################################################
+set +e
+docker tag $DOCKERNAME:$BUILD_VERSION $APP_TYPE/bkp/$APP_NAME:${BUILD_VERSION}
+set -e
 
 ###############################################################################
 # Start building
 ###############################################################################
+for comp in $COMPONENTS; do
+	# Build the components one by one and name them
+	if [ "$comp" == "cuda_devel" ]; then
+		comp=devel
+	elif [ "$comp" == "cuda_runtime" ]; then
+		comp=runtime
+	fi
+	docker build --target $comp -t $APP_TYPE/$comp:$BUILD_VERSION .
+done
+docker build --target $APP_NAME -t $APP_TYPE/build/$APP_NAME:$BUILD_VERSION .
+# Build the app
 sh docker_build.sh
 
+###############################################################################
+# Squash the image
+###############################################################################
+set +e
+docker tag $DOCKERNAME:$BUILD_VERSION $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
+docker-squash -t $DOCKERNAME:$BUILD_VERSION $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
+
+# Remove the backed up older image
+docker image rm $APP_TYPE/bkp/$APP_NAME:${BUILD_VERSION}
+
+###############################################################################
+# Remove the unnecessary tagged images
+###############################################################################
+# Remove the image used to build the app
+#docker image rm $APP_TYPE/build/$APP_NAME:${BUILD_VERSION}
+
+# Remove the non-squashed image
+docker image rm $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
+set -e
 
 ###############################################################################
 # Print the README
