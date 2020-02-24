@@ -3,7 +3,6 @@
 ###############################################################################
 FROM    devel AS qmcpack
 
-COPY    --from=cuda /usr/ /usr/
 COPY    --from=openmpi /usr/local /usr/local
 COPY    --from=openblas /usr/local /usr/local
 COPY    --from=fftw3 /usr/local /usr/local

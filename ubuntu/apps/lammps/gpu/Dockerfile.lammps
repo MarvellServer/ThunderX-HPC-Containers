@@ -1,15 +1,13 @@
 ###############################################################################
-# LAMMPS                                                                     #
+# LAMMPS                                                                      #
 ###############################################################################
 FROM    devel AS lammps
 
 COPY    --from=openmpi /usr/local /usr/local
-COPY    --from=cuda /usr/local /usr/local
 COPY    --from=openblas /usr/local /usr/local
 COPY    --from=fftw3 /usr/local /usr/local
 COPY    --from=cmake /usr/local /usr/local
 
-ENV     PATH=/usr/local/cuda-10.2/bin:$PATH
 
 #Create required directories
 RUN     mkdir -p /docker/run && \
@@ -68,7 +66,7 @@ RUN	cd /tmp/lammps && \
 
 
 
-FROM    cuda
+FROM    runtime
 LABEL   MAINTAINER="Ashwin Sekhar T K"
 LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
 LABEL   LAMMPS_VERSION="lammps-patch_20Nov2019"

@@ -1,4 +1,4 @@
 APP_TYPE=hpc/gpu
 APP_NAME=qmcpack
 TOOLCHAIN=gcc
-COMPONENTS="devel ucx openmpi openblas fftw3 boost cmake hdf5 cuda runtime"
+COMPONENTS="cuda_devel ucx openmpi openblas fftw3 boost cmake hdf5 cuda_runtime"
