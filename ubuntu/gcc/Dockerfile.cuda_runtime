@@ -1,7 +1,7 @@
 ###############################################################################
 # CUDA_RUNTIME                                                                #
 ###############################################################################
-FROM nvcr.io/hpc-publisher/armsc19/cuda:10.2-devel-ubuntu18.04 as runtime
+FROM nvcr.io/hpc-publisher/armsc19/cuda:10.2-devel-ubuntu18.04 as cuda_runtime
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -26,3 +26,7 @@ RUN     groupadd -r guest && \
         usermod -aG sudo guest && \
         sed -i '26d' /etc/sudoers && \
         sed -i '26i\%sudo   ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers
+
+
+FROM cuda_runtime as runtime
+

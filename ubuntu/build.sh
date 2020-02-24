@@ -143,11 +143,6 @@ set -e
 ###############################################################################
 for comp in $COMPONENTS; do
 	# Build the components one by one and name them
-	if [ "$comp" == "cuda_devel" ]; then
-		comp=devel
-	elif [ "$comp" == "cuda_runtime" ]; then
-		comp=runtime
-	fi
 	docker build --target $comp -t $APP_TYPE/$comp:$BUILD_VERSION .
 done
 docker build --target $APP_NAME -t $APP_TYPE/build/$APP_NAME:$BUILD_VERSION .

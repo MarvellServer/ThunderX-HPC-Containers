@@ -1,7 +1,7 @@
 ###############################################################################
 # CUDA_DEVEL                                                                  #
 ###############################################################################
-FROM nvcr.io/hpc-publisher/armsc19/cuda:10.2-devel-ubuntu18.04 as devel
+FROM nvcr.io/hpc-publisher/armsc19/cuda:10.2-devel-ubuntu18.04 as cuda_devel
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -40,3 +40,5 @@ ENV     PATH=/usr/local/bin:${PATH} \
         LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
         LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
 	CC=gcc CXX=g++ FC=gfortran
+
+FROM  cuda_devel as devel
