@@ -1,0 +1,4 @@
+APP_TYPE=hpc/gpu
+APP_NAME=gromacs
+TOOLCHAIN=gcc
+COMPONENTS="cuda_devel ucx openmpi openblas fftw3 cmake cuda_runtime"
