@@ -1,7 +1,7 @@
 ###############################################################################
 # DEVEL                                                                       #
 ###############################################################################
-FROM base as devel
+FROM ubuntu:18.04 as devel
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	wget \
@@ -13,11 +13,7 @@ RUN apt-get update -y && \
 	pkg-config \
         ca-certificates \
         python \ 
-	python-dev && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN apt-get update -y && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	python-dev \
         g++-8 \
         gcc-8 \
 	sudo \

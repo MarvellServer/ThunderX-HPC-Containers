@@ -1,5 +1,5 @@
-base            ubuntu-18.04
 devel           gcc-8.3.0
+runtime         ubuntu-18.04
 boost		1.72.0
 cmake		3.14.5
 cuda		10.2

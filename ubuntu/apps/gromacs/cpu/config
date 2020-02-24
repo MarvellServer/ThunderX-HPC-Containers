@@ -1,4 +1,4 @@
 APP_TYPE=hpc/cpu
 APP_NAME=gromacs
 TOOLCHAIN=gcc
-COMPONENTS="base devel ucx openmpi openblas fftw3 cmake runtime"
+COMPONENTS="devel ucx openmpi openblas fftw3 cmake runtime"

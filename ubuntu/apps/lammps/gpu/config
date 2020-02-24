@@ -1,4 +1,4 @@
 APP_TYPE=hpc/gpu
 APP_NAME=lammps
 TOOLCHAIN=gcc
-COMPONENTS="base devel ucx openmpi openblas fftw3 cmake runtime cuda"
+COMPONENTS="devel ucx openmpi openblas fftw3 cmake runtime cuda"

@@ -1,4 +1,4 @@
 APP_TYPE=hpc/cpu
 APP_NAME=laghos
 TOOLCHAIN=gcc
-COMPONENTS="base devel ucx openmpi openblas cmake runtime"
+COMPONENTS="devel ucx openmpi openblas cmake runtime"

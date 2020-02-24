@@ -1,4 +1,4 @@
 APP_TYPE=hpc/cpu
 APP_NAME=snap
 TOOLCHAIN=gcc
-COMPONENTS="base devel ucx openmpi runtime"
+COMPONENTS="devel ucx openmpi runtime"

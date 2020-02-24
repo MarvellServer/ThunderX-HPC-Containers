@@ -1,4 +1,4 @@
 APP_TYPE=hpc/cpu
 APP_NAME=qmcpack
 TOOLCHAIN=gcc
-COMPONENTS="base devel ucx openmpi openblas fftw3 boost cmake hdf5 runtime"
+COMPONENTS="devel ucx openmpi openblas fftw3 boost cmake hdf5 runtime"

@@ -1,14 +1,22 @@
 ###############################################################################
 # RUNTIME                                                                     #
 ###############################################################################
-FROM base as runtime
+FROM ubuntu:18.04 AS runtime
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        sudo \
         openssh-client \
         libgfortran5 \
         libgomp1 \
-	libnuma1 && \
+        libnuma1 && \
     rm -rf /var/lib/apt/lists/*
+
+# Setup guest and give sudo permissions without password
+RUN     groupadd -r guest && \
+        useradd -r -g guest guest && \
+        usermod -aG sudo guest && \
+        sed -i '26d' /etc/sudoers && \
+        sed -i '26i\%sudo   ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers
 
 # Setup environment paths
 ENV     PATH=/usr/local/bin:${PATH} \
