@@ -57,6 +57,14 @@ RUN sed -i 's#/tmp/packages/work/tools/bin/##' /opt/gcc-9.2.0-glibc-2.30/bin/lib
 RUN sed -i 's#/tmp/packages/work/tools/bin/##' /opt/gcc-9.2.0-glibc-2.30/bin/libtoolize
 RUN sed -i 's#^NM.*#NM=\"nm -B\"#' /opt/gcc-9.2.0-glibc-2.30/bin/libtool
 
+RUN apt-get update && \
+    apt-get -y install vim
+
+# strip binaries
+RUN find /opt/gcc-9.2.0-glibc-2.30/ -type f -exec file {} \; | grep "ELF 64-bit LSB executable"    | cut -d ":" -f 1-1 | xargs /usr/bin/aarch64-linux-gnu-strip
+RUN find /opt/gcc-9.2.0-glibc-2.30/ -type f -exec file {} \; | grep "ELF 64-bit LSB shared object" | cut -d ":" -f 1-1 | xargs /usr/bin/aarch64-linux-gnu-strip
+RUN rm -rf /docker/build/build.log
+
 ENV PATH=/opt/gcc-9.2.0-glibc-2.30/bin:/usr/local/bin:${PATH}
 ENV CFLAGS="-idirafter /usr/include"
 ENV CXXFLAGS="-idirafter /usr/include"
@@ -74,9 +82,6 @@ ENV LDFLAGS="${LDFLAGS} -Wl,-rpath=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/s
 ENV LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64"
 ENV LDFLAGS="${LDFLAGS} -L/usr/lib/aarch64-linux-gnu"
 ENV LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/usr/lib/aarch64-linux-gnu"
-
-RUN apt-get update && \
-    apt-get -y install vim
 
 # build ucx
 RUN mkdir -p /tmp/ucx && \
@@ -172,6 +177,6 @@ COPY  data/run.sh /docker/run
 
 ENV   PATH=/usr/local/openmc/bin/:${PATH}
 
-USER    guest
+#USER    guest
 RUN     sudo chown -R guest:guest /docker/run/
 ENTRYPOINT sh "/docker/run/run.sh"
