@@ -1,7 +1,7 @@
 ###############################################################################
 # OPENMPI                                                                     #
 ###############################################################################
-FROM devel AS openmpi
+FROM gcc9 AS openmpi
 COPY --from=ucx /usr/local /usr/local
 RUN mkdir -p /tmp/openmpi && \
     cd /tmp/openmpi && \
