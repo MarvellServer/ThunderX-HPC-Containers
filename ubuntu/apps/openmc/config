@@ -1,0 +1,4 @@
+APP_TYPE=hpc
+APP_NAME=openmc
+TOOLCHAIN=gcc
+COMPONENTS="base devel9 gcc9 ucx openmpi cmake hdf5 runtime"

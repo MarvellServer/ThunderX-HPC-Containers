@@ -1,0 +1,18 @@
+export PATH=/opt/gcc-9.2.0-glibc-2.30/bin:${PATH}
+
+export CFLAGS="-idirafter /usr/include"
+export CXXFLAGS="-idirafter /usr/include"
+export FFLAGS="-idirafter /usr/include"
+export FCFLAGS="-idirafter /usr/include"
+export LDFLAGS="-Wl,-dynamic-linker=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/ld-2.30.so"
+export LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libc-2.30.so"
+export LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libm-2.30.so"
+export LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libdl-2.30.so"
+export LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libpthread-2.30.so"
+export LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/librt-2.30.so"
+export LDFLAGS="${LDFLAGS} -Wl,-rpath=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib"
+export LDFLAGS="${LDFLAGS} -Wl,-rpath=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64"
+export LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib"
+export LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64"
+export LDFLAGS="${LDFLAGS} -L/usr/lib/aarch64-linux-gnu"
+export LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/usr/lib/aarch64-linux-gnu"
