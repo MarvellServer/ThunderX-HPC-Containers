@@ -32,7 +32,7 @@ RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
     update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
 
 # Setup environment paths
-ENV     PATH=/usr/local/bin:${PATH} 
-#       LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
-#       LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
-#CC=gcc CXX=g++ FC=gfortran
+ENV     PATH=/usr/local/bin:${PATH} \
+        LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
+        LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
+        CC=gcc CXX=g++ FC=gfortran

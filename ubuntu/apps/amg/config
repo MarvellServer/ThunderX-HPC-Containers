@@ -1,0 +1,4 @@
+APP_TYPE=hpc
+APP_NAME=amg
+TOOLCHAIN=gcc
+COMPONENTS="base devel ucx openmpi runtime"
