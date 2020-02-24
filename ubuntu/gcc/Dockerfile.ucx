@@ -11,3 +11,8 @@ RUN mkdir -p /tmp/ucx && \
     ./configure --prefix=/usr/local --disable-doxygen-doc --without-knem && \
     make -j64 && make install -j64 && \
     rm -rf /tmp/ucx
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y "*cuda*" "*dev-*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*

@@ -12,3 +12,8 @@ RUN mkdir -p /tmp/fftw3 && \
     mkdir buildf && cd buildf && \
     ../fftw-3.3.8/configure --prefix=/usr/local --enable-neon --enable-fma --enable-generic-simd128 --enable-armv8-cntvct-el0 --enable-mpi --enable-openmp --enable-threads --enable-shared --enable-static --enable-fortran --enable-single && make -j && make install && cd .. && \
      rm -rf /tmp/fftw3
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y "*cuda*" "*dev-*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*

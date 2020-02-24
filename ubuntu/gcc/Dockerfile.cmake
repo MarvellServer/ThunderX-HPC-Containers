@@ -9,3 +9,8 @@ RUN mkdir -p /tmp/cmake && \
     make -j$(nproc) && \
     make install && \
     rm -rf /tmp/cmake
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y "*cuda*" "*dev-*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*

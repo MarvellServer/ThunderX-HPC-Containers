@@ -10,3 +10,8 @@ RUN mkdir -p /tmp/openblas && \
     make USE_THREAD=0 TARGET=THUNDERX2T99 CC=gcc -j64 && \
     make TARGET=THUNDERX2T99 CC=gcc PREFIX=/usr/local install && \
     rm -rf /tmp/openblas
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y "*cuda*" "*dev-*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*

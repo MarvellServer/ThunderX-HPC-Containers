@@ -11,3 +11,8 @@ RUN mkdir -p /tmp/openmpi && \
     ./configure --prefix=/usr/local --enable-mpi-cxx --with-cma --enable-mpirun-prefix-by-default --enable-mpi1-compatibility --with-ucx=/usr/local --disable-oshmem && \
     make -j && make install -j && \
     rm -rf /tmp/openmpi
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y "*cuda*" "*dev-*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
