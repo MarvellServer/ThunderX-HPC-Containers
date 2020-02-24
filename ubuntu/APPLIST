@@ -1,8 +1,10 @@
 cp2k
+gromacs/cpu
 hacc
 hpl
 laghos
 lammps/cpu
+lammps/gpu
 qmcpack/cpu
 quicksilver
 snap

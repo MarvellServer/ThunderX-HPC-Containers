@@ -1,0 +1,68 @@
+###############################################################################
+# GROMACS                                                                     #
+###############################################################################
+FROM    devel AS gromacs
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+
+#Download Source code
+# wget https://github.com/gromacs/gromacs/archive/v2019.1.tar.gz && \
+RUN	mkdir -p /tmp/gromacs && \
+   	cd /tmp/gromacs && \
+	wget ftp://ftp.gromacs.org/pub/gromacs/gromacs-2020.tar.gz && \
+	tar -zxf gromacs-2020.tar.gz
+
+RUN	mkdir -p /tmp/gromacs/build_cpu && \
+    	cd /tmp/gromacs/build_cpu && \
+	cmake -DCMAKE_INSTALL_PREFIX=/usr/local/gromacs \
+           -DGMX_FFT_LIBRARY=fftw3 \
+           -DBUILD_SHARED_LIBS=OFF \
+           -DBUILD_TESTING=ON \
+           -DREGRESSIONTEST_DOWNLOAD=ON \
+           -DCMAKE_C_COMPILER=mpicc \
+           -DCMAKE_CXX_COMPILER=mpicxx \
+           -DCMAKE_C_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays -funroll-loops -fPIC" \
+           -DCMAKE_CXX_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays -funroll-loops -fPIC" \
+           -DCMAKE_LINKER_FLAGS="-ldl -lnuma" \
+           -DGMX_BUILD_OWN_FFTW=ON \
+           -DGMX_CYCLE_SUBCOUNTERS=ON \
+           -DGMX_SIMD=ARM_NEON_ASIMD \
+           -DGMX_DOUBLE=OFF \
+           -DGMX_GPU=OFF \
+           -DGMX_MPI=ON \
+           -DGMX_OPENMP=ON \
+           -DGMX_BUILD_MDRUN_ONLY=OFF \
+           -DGMX_EXTERNAL_BLAS=OFF \
+           -DGMX_EXTERNAL_LAPACK=OFF \
+           -DGMX_X11=OFF \
+           -DGMX_PREFER_STATIC_LIBS=ON \
+           ../gromacs-2020 && \
+	make -j && \
+	make install
+
+RUN     wget ftp://ftp.gromacs.org/pub/benchmarks/ADH_bench_systems.tar.gz
+
+
+FROM    runtime
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
+LABEL   GROMACS_VERSION="v2020"
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+
+COPY	--from=gromacs /usr/local/gromacs /usr/local/gromacs
+COPY	/data/ /docker/run/
+COPY	--from=gromacs /ADH_bench_systems.tar.gz /docker/run/
+COPY	/data/ /docker/src/data
+
+RUN     chown -R guest:guest /docker/run
+
+USER    guest
+ENV	PATH=/usr/local/gromacs/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
