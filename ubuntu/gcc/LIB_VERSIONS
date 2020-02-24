@@ -8,6 +8,6 @@ cuda		10.2
 fftw3		3.8
 hdf5		1.10.6
 openblas	0.3.3
-openmpi		4.0.0
+openmpi		4.0.2
 scalapack	2.1.0
 ucx		1.6.0
