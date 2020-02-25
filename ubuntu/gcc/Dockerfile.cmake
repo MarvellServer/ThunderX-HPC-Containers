@@ -1,7 +1,7 @@
 ###############################################################################
 # CMAKE                                                                       #
 ###############################################################################
-FROM gcc9 AS cmake
+FROM devel AS cmake
 
 RUN cd /tmp && \
     git clone https://gitlab.kitware.com/cmake/cmake.git && \

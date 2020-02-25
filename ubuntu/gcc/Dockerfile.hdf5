@@ -1,7 +1,7 @@
 ###############################################################################
 # HDF5                                                                        #
 ###############################################################################
-FROM gcc9 AS hdf5
+FROM devel AS hdf5
 COPY --from=ucx /usr/local /usr/local
 COPY --from=openmpi /usr/local /usr/local
 COPY --from=cmake /usr/local /usr/local
