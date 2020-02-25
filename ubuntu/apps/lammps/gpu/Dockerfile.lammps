@@ -73,8 +73,9 @@ LABEL   LAMMPS_VERSION="lammps-patch_20Nov2019"
 
 RUN	apt-get update -y && \
    	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-   	hwloc libhwloc-dev bc && \
+   	hwloc bc && \
    	rm -rf /var/lib/apt/lists/*
+
 
 COPY    --from=openmpi /usr/local /usr/local
 COPY    --from=openblas /usr/local /usr/local
@@ -84,6 +85,23 @@ COPY    --from=cmake /usr/local /usr/local
 COPY	--from=lammps /usr/local/lammps /usr/local/lammps
 COPY	/data/ /docker/run/
 COPY	/data/ /docker/src/data
+
+# Remove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  g++7 gcc-7 cpp-7 gcc g++ "*-dev*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  cuda-cufft-10-2 \
+	  cuda-curand-10-2 \
+	  cuda-cusolver-10-2 \
+	  cuda-cusparse-10-2 \
+	  cuda-npp-10-2 \
+	  cuda-nvgraph-10-2 \
+	  cuda-nvrtc-10-2 \
+	  cuda-libraries-10-2 \
+	  libcublas10 && \
+	rm -rf /var/lib/apt/lists/*
 
 RUN     chown -R guest:guest /docker/run
 

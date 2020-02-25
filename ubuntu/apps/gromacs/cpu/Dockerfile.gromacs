@@ -28,6 +28,7 @@ RUN	mkdir -p /tmp/gromacs/build_cpu && \
            -DCMAKE_CXX_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays -funroll-loops -fPIC" \
            -DCMAKE_LINKER_FLAGS="-ldl -lnuma" \
            -DGMX_BUILD_OWN_FFTW=ON \
+           -DGMX_HWLOC=OFF \
            -DGMX_CYCLE_SUBCOUNTERS=ON \
            -DGMX_SIMD=ARM_NEON_ASIMD \
            -DGMX_DOUBLE=OFF \
