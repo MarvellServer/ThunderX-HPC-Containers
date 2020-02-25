@@ -1,11 +1,13 @@
 cp2k
 gromacs/cpu
+gromacs/gpu
 hacc
 hpl
 laghos
 lammps/cpu
 lammps/gpu
 qmcpack/cpu
+qmcpack/gpu
 quicksilver
 snap
 specfem3d

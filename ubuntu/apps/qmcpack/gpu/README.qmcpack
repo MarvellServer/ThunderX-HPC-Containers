@@ -1,11 +1,11 @@
 -------------
 QMCPACK NOTES
 -------------
-The Docker run command expects the file NiO-fcc-supertwist111-supershift000-S32.h5
-from https://anl.app.box.com/s/yxz1ic4kxtdtgpva5hcmlom9ixfl3v3c/folder/18160688946
-to be present in the /docker/run/h5files directory.
+The Docker run command expects the input files directory S32_example
+to be mapped to /docker/run/S32_example directory inside the container.
 
-Download this file to a host directory. Then run the following command to launch
-the docker container.
+The input files can be downloaded using the script 
+https://gitlab.com/NVHPC/ngc-examples/-/raw/master/qmcpack/v3.5.0/get_S32.sh
 
-docker run -it -v /hostdir/containing/h5files:/docker/run/h5file --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/cpu/qmcpack:BUILD_VERSION
+Map the directory using the -v option of docker run command.
+Eg: docker run -it -v /hostpath/S32_example:/docker/run/S32_example --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --gpus all --shm-size=1G hpc/cpu/qmcpack:BUILD_VERSION

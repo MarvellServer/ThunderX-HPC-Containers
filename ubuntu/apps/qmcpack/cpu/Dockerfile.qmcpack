@@ -25,9 +25,6 @@ RUN     mkdir -p /tmp/qmcpack && cd /tmp/qmcpack && \
         wget --no-check-certificate https://github.com/QMCPACK/qmcpack/archive/v3.7.0.tar.gz && \
 	tar xf v3.7.0.tar.gz
 
-RUN     mkdir -p /tmp/qmcpack/NiO-benchmark
-COPY    ./data/h5files /tmp/qmcpack/NiO-benchmark/NiO
-
 RUN     mkdir -p /tmp/qmcpack/qmcpack-3.7.0/build && \
         cd /tmp/qmcpack/qmcpack-3.7.0/build && \
 	cmake -Wno-dev \
@@ -39,7 +36,6 @@ RUN     mkdir -p /tmp/qmcpack/qmcpack-3.7.0/build && \
 		-DHAVE_SINCOS=1 \
 		-DBOOST_ROOT=/usr/local \
 		-DHDF5_ROOT=/usr/local \
-		-DQMC_DATA=/tmp/qmcpack/NiO-benchmark \
 		-DENABLE_TIMERS=1 \
 		-DENABLE_SOA=1 \
 		-DBLAS_LIBRARIES=/usr/local/lib/libopenblas.so \
@@ -72,16 +68,12 @@ COPY    --from=boost /usr/local /usr/local
 COPY    --from=hdf5 /usr/local /usr/local
 
 RUN     mkdir -p /docker/run
-COPY    --from=qmcpack /tmp/qmcpack/qmcpack-3.7.0/build/tests/performance/NiO /docker/run/NiO
-RUN     rm /docker/run/NiO/Ni.opt.xml && rm /docker/run/NiO/O.xml
-COPY    --from=qmcpack /tmp/qmcpack/qmcpack-3.7.0/tests/performance/NiO/Ni.opt.xml /docker/run/NiO/Ni.opt.xml
-COPY    --from=qmcpack /tmp/qmcpack/qmcpack-3.7.0/tests/performance/NiO/O.xml /docker/run/NiO/O.xml
 COPY    --from=qmcpack /usr/local/qmcpack /usr/local/qmcpack
 COPY    ./data/run.sh /docker/run
+COPY    ./data/NiO-fcc-S32-dmc.xml /docker/run
 
-# Avoid copying the h5 file into the final image.
-RUN     mkdir -p /docker/src/data/h5files
 COPY    data/run.sh /docker/src/data
+COPY    data/NiO-fcc-S32-dmc.xml /docker/src/data
 
 RUN     chown -R guest:guest /docker/run
 
