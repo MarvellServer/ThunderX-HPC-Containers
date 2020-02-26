@@ -167,30 +167,23 @@ sed -i "s#BUILDDIR#/docker/src#g" prerequisites.sh
 
 
 ###############################################################################
-# Rename the reference to the previously build image if it exists
-###############################################################################
-set +e
-docker tag $DOCKERNAME:$BUILD_VERSION $APP_TYPE/bkp/$APP_NAME:${BUILD_VERSION}
-set -e
-
-
-###############################################################################
 # Start building
 ###############################################################################
 # Build the intermediate stages and tag them
-devel=`echo $COMPONENTS | awk '{print $1}'`
+devel_version=`echo $COMPONENTS | awk '{print $1}' | awk -F_ '{print $2}'`
 for comp in $COMPONENTS; do
 	if [[ "$comp" == *"devel"* ]]; then
 		tag=$APP_TYPE/$comp:$BUILD_VERSION
 	elif [[ "$comp" == *"runtime"* ]]; then
 		tag=$APP_TYPE/$comp:$BUILD_VERSION
 	else
-		tag=$APP_TYPE/$devel/$comp:$BUILD_VERSION
+		tag=$APP_TYPE/devel_${devel_version}/$comp:$BUILD_VERSION
 	fi
 	# Build the components one by one and name them
 	docker build --target $comp -t $tag .
 done
-docker build --target $APP_NAME -t $APP_TYPE/build/$APP_NAME:$BUILD_VERSION .
+# Build the image which has the full build environment of the application
+docker build --target $APP_NAME -t $APP_TYPE/devel_${devel_version}/$APP_NAME:$BUILD_VERSION .
 # Build the app
 sh docker_build.sh
 
@@ -199,21 +192,11 @@ sh docker_build.sh
 # Squash the image
 ###############################################################################
 set +e
-docker tag $DOCKERNAME:$BUILD_VERSION $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
-docker-squash -t $DOCKERNAME:$BUILD_VERSION $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
+# Rename the built image with a runtime prefix
+docker tag $DOCKERNAME:$BUILD_VERSION $APP_TYPE/runtime_${devel_version}/$APP_NAME:$BUILD_VERSION
+# Squash the image
+docker-squash -t $DOCKERNAME:$BUILD_VERSION $APP_TYPE/runtime_${devel_version}/$APP_NAME:$BUILD_VERSION
 
-# Remove the previously built image
-docker image rm $APP_TYPE/bkp/$APP_NAME:${BUILD_VERSION}
-
-
-###############################################################################
-# Remove the unnecessary tagged images
-###############################################################################
-# Remove the image used to build the app
-#docker image rm $APP_TYPE/build/$APP_NAME:${BUILD_VERSION}
-
-# Remove the non-squashed image
-docker image rm $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
 set -e
 
 
