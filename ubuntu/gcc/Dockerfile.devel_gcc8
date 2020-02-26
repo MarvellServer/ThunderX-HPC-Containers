@@ -19,6 +19,7 @@ RUN apt-get update -y && \
 	sudo \
         libnuma-dev \
 	hwloc \
+	libssl-dev \
 	libhwloc-dev \
         openssh-client \
         gfortran-8 && \

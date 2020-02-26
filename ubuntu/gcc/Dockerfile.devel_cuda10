@@ -20,6 +20,7 @@ RUN apt-get update -y && \
 	sudo \
 	hwloc \
 	libhwloc-dev \
+	libssl-dev \
         libnuma-dev \
         openssh-client \
         gfortran-8 && \
