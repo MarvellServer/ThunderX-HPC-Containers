@@ -50,8 +50,8 @@ RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
 ENV     PATH=/usr/local/bin:${PATH}
 RUN mkdir -p /docker/build
 
-COPY data/config /docker/build/.config
-COPY data/postinstall.sh /docker/build/postinstall.sh
+COPY data/devel9/config /docker/build/.config
+COPY data/devel9/postinstall.sh /docker/build/postinstall.sh
 
 #BUILD ct-ng tools
 RUN mkdir -p /tmp/ct-ng && \

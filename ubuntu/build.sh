@@ -57,6 +57,17 @@ echo "COPY    Dockerfile /docker/src" >> Dockerfile
 echo "COPY    prerequisites.sh /docker/src" >> Dockerfile
 echo "COPY    README /docker/src" >> Dockerfile
 
+###############################################################################
+# Copy the data for the components into the build directory
+# and add the line to copy the same into the image
+###############################################################################
+for comp in $COMPONENTS; do
+	if [ -d $LIBDOCKER_DIR/data/$comp/ ]; then
+		mkdir -p $APPBUILD_DIR/data/$comp
+		cp -r $LIBDOCKER_DIR/data/$comp/* $APPBUILD_DIR/data/$comp || exit 0
+		echo "COPY    data/$comp /docker/src/data/$comp" >> Dockerfile
+	fi
+done
 
 ###############################################################################
 # Combine the Readmes of the components involved.
