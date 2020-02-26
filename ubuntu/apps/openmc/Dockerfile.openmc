@@ -59,6 +59,4 @@ COPY  data/run.sh /docker/run
 
 ENV     PATH=/usr/local/openmc/bin/:/opt/gcc-9.2.0-glibc-2.30/bin:${PATH}
 ENTRYPOINT /bin/bash /docker/run/run.sh
-#RUN     chown -R guest:guest /docker/run
 
-#USER    guest
