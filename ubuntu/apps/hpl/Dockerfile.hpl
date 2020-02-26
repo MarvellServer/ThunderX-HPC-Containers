@@ -7,7 +7,7 @@ COPY    --from=openmpi /usr/local /usr/local
 COPY    --from=openblas /usr/local /usr/local
 
 # Set Variables and Flags
-ARG	CFLAGS="-O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math"
+ENV	CFLAGS="$CFLAGS $LDFLAGS -O3 -fno-tree-vectorize -march=armv8.1-a+simd -mcpu=thunderx2t99 -finline-functions -ffast-math"
 ARG	BLASLIB=libopenblas.a
 ARG	TOPDIR=/tmp/hpl/hpl-2.3
 
