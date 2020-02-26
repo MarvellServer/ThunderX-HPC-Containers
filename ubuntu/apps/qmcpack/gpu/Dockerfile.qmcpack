@@ -89,8 +89,5 @@ RUN	apt-get update -y && \
 	  cuda-libraries-10-2 && \
 	rm -rf /var/lib/apt/lists/*
 
-COPY    data/run.sh /docker/src/data
-COPY    data/NiO-fcc-S32-dmc.xml /docker/src/data
-
 ENV	PATH=/usr/local/qmcpack/bin/:${PATH}
 ENTRYPOINT sh "/docker/run/run.sh"

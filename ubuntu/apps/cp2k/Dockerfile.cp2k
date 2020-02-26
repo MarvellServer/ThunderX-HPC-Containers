@@ -55,5 +55,4 @@ COPY    --from=openblas /usr/local/ /usr/local
 ENV     PATH=/usr/local/cp2k/bin/:${PATH}
 COPY    --from=cp2k /docker/run /docker/run
 COPY    --from=cp2k /usr/local/cp2k/bin/ /usr/local/cp2k/bin/
-COPY    data/ /docker/src/data
 ENTRYPOINT sh "/docker/run/run.sh"

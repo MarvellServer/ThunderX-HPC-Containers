@@ -72,8 +72,5 @@ COPY    --from=qmcpack /usr/local/qmcpack /usr/local/qmcpack
 COPY    ./data/run.sh /docker/run
 COPY    ./data/NiO-fcc-S32-dmc.xml /docker/run
 
-COPY    data/run.sh /docker/src/data
-COPY    data/NiO-fcc-S32-dmc.xml /docker/src/data
-
 ENV	PATH=/usr/local/qmcpack/bin/:${PATH}
 ENTRYPOINT sh "/docker/run/run.sh"

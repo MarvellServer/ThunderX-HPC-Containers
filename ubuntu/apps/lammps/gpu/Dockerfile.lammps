@@ -10,8 +10,7 @@ COPY    --from=cmake /usr/local /usr/local
 
 
 #Create required directories
-RUN     mkdir -p /docker/run && \
-	mkdir -p /docker/src
+RUN     mkdir -p /docker/run
 
 RUN	apt-get update -y && \
    	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -84,7 +83,6 @@ COPY    --from=cmake /usr/local /usr/local
 
 COPY	--from=lammps /usr/local/lammps /usr/local/lammps
 COPY	/data/ /docker/run/
-COPY	/data/ /docker/src/data
 
 # Remove unnecessary packages
 RUN	apt-get update -y && \

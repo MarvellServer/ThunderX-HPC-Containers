@@ -39,5 +39,4 @@ COPY    --from=openmpi /usr/local /usr/local
 ENV     PATH=/usr/local/snap/bin/:${PATH}
 COPY    --from=snap /usr/local/snap/bin /usr/local/snap/bin
 COPY    --from=snap /docker/run /docker/run
-COPY    data/ /docker/src/data
 ENTRYPOINT  sh "/docker/run/run.sh"

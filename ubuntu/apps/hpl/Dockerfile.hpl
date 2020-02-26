@@ -42,5 +42,4 @@ COPY    --from=openmpi /usr/local /usr/local
 ENV	PATH=/usr/local/hpl/bin/:${PATH}
 COPY    --from=hpl /usr/local/hpl/bin /usr/local/hpl/bin
 COPY    --from=hpl /docker/run /docker/run
-COPY    data/ /docker/src/data
 ENTRYPOINT sh "/docker/run/run.sh"

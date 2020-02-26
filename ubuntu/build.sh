@@ -20,6 +20,7 @@ if [ -z "$1" ]; then
 	exit	
 fi
 
+
 ###############################################################################
 # Read the application config and set the variables
 ###############################################################################
@@ -34,41 +35,17 @@ DOCKERNAME=$APP_TYPE/$APP_NAME
 BUILDCMD="docker build -t $DOCKERNAME:$BUILD_VERSION ."
 DEFAULTRUNCMD="docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G $DOCKERNAME:$BUILD_VERSION"
 
+
 ###############################################################################
 # Create the Build Directory tree and copy required data
 ###############################################################################
-mkdir -p $APPBUILD_DIR/data
-cp -r $APPDOCKER_DIR/data/* $APPBUILD_DIR/data || exit 0
+rm -rf $APPBUILD_DIR
+mkdir -p $APPBUILD_DIR
+if [ -d $APPDOCKER_DIR/data/ ]; then
+	cp -r $APPDOCKER_DIR/data/ $APPBUILD_DIR/data 
+fi
 cd $APPBUILD_DIR
 
-
-###############################################################################
-# Combine the Dockerfiles of the components involved
-###############################################################################
-echo "" > Dockerfile
-for comp in $COMPONENTS; do
-	cat $LIBDOCKER_DIR/Dockerfile.$comp >> Dockerfile
-done
-cat $APPDOCKER_DIR/Dockerfile.${APP_NAME} >> Dockerfile
-
-###############################################################################
-# Change to user guest
-###############################################################################
-echo -e "\n\n# Change to user guest\n" >> Dockerfile
-echo "USER    root" >> Dockerfile
-echo "RUN     mkdir -p /docker" >> Dockerfile
-echo "RUN     chown -R guest:guest /docker/" >> Dockerfile
-echo "USER    guest" >> Dockerfile
-
-###############################################################################
-# Add the command to copy the Dockerfiles into the image
-###############################################################################
-# These files should be always copied to the image
-echo "RUN     mkdir -p /docker/src" >> Dockerfile
-echo "COPY    docker_build.sh /docker/src" >> Dockerfile
-echo "COPY    Dockerfile /docker/src" >> Dockerfile
-echo "COPY    prerequisites.sh /docker/src" >> Dockerfile
-echo "COPY    README /docker/src" >> Dockerfile
 
 ###############################################################################
 # Copy the data for the components into the build directory
@@ -78,9 +55,9 @@ for comp in $COMPONENTS; do
 	if [ -d $LIBDOCKER_DIR/data/$comp/ ]; then
 		mkdir -p $APPBUILD_DIR/data/$comp
 		cp -r $LIBDOCKER_DIR/data/$comp/* $APPBUILD_DIR/data/$comp || exit 0
-		echo "COPY    data/$comp /docker/src/data/$comp" >> Dockerfile
 	fi
 done
+
 
 ###############################################################################
 # Combine the Readmes of the components involved.
@@ -94,6 +71,7 @@ for comp in $COMPONENTS; do
 		echo -e "\n" >> README
 	fi
 done
+
 if [ -f $APPDOCKER_DIR/README.${APP_NAME} ]; then
 	cat $APPDOCKER_DIR/README.${APP_NAME} >> README
 else
@@ -103,6 +81,7 @@ else
 	echo "Run the following command to run the docker" >> README
 	echo "$DEFAULTRUNCMD" >> README
 fi
+sed -i "s#BUILD_VERSION#$BUILD_VERSION#g" README
 
 
 ###############################################################################
@@ -121,8 +100,38 @@ fi
 
 
 ###############################################################################
+# Combine the Dockerfiles of the components involved
+###############################################################################
+touch Dockerfile
+for comp in $COMPONENTS; do
+	cat $LIBDOCKER_DIR/Dockerfile.$comp >> Dockerfile
+	echo "" >> Dockerfile
+done
+cat $APPDOCKER_DIR/Dockerfile.${APP_NAME} >> Dockerfile
+
+
+###############################################################################
+# Add Command to change to user guest in the Dockerfile
+###############################################################################
+echo -e "\n# Change to user guest" >> Dockerfile
+echo "USER    root" >> Dockerfile
+echo "RUN     mkdir -p /docker" >> Dockerfile
+echo "RUN     chown -R guest:guest /docker/" >> Dockerfile
+echo "USER    guest" >> Dockerfile
+
+
+###############################################################################
+# Add the command to copy the Dockerfiles into the image
+###############################################################################
+# These files should be always copied to the image
+echo -e "\n# Copy the final dockerfile and data to the image" >> Dockerfile
+echo "COPY    . /docker/src" >> Dockerfile
+
+
+###############################################################################
 # Add build_version and docker name labels into the Dockerfile
 ###############################################################################
+echo -e "\n# Build version and name" >> Dockerfile
 echo "LABEL BUILD_VERSION=$BUILD_VERSION" >> Dockerfile
 echo "LABEL DOCKERNAME=$DOCKERNAME" >> Dockerfile
 
@@ -130,9 +139,10 @@ echo "LABEL DOCKERNAME=$DOCKERNAME" >> Dockerfile
 ###############################################################################
 # Add the library versions into the Dockerfile
 ###############################################################################
+echo -e "\n# Versions of the components" >> Dockerfile
 for comp in $COMPONENTS; do
 	set +e
-	lib_version=`cat $LIBDOCKER_DIR/LIB_VERSIONS | grep $comp`
+	lib_version=`cat $LIBDOCKER_DIR/LIB_VERSIONS | grep -w $comp`
 	set -e
 	if [ ! -z "$lib_version" ]; then
 		label=`echo $lib_version | awk '{print toupper($1) "_VERSION=" $2}'`
@@ -155,12 +165,14 @@ echo $BUILDCMD > docker_build.sh
 sed "s#BUILDDIR#$APPBUILD_DIR#g" prerequisites.sh | sh
 sed -i "s#BUILDDIR#/docker/src#g" prerequisites.sh
 
+
 ###############################################################################
-# Name the reference to the older image
+# Rename the reference to the previously build image if it exists
 ###############################################################################
 set +e
 docker tag $DOCKERNAME:$BUILD_VERSION $APP_TYPE/bkp/$APP_NAME:${BUILD_VERSION}
 set -e
+
 
 ###############################################################################
 # Start building
@@ -173,6 +185,7 @@ docker build --target $APP_NAME -t $APP_TYPE/build/$APP_NAME:$BUILD_VERSION .
 # Build the app
 sh docker_build.sh
 
+
 ###############################################################################
 # Squash the image
 ###############################################################################
@@ -180,8 +193,9 @@ set +e
 docker tag $DOCKERNAME:$BUILD_VERSION $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
 docker-squash -t $DOCKERNAME:$BUILD_VERSION $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
 
-# Remove the backed up older image
+# Remove the previously built image
 docker image rm $APP_TYPE/bkp/$APP_NAME:${BUILD_VERSION}
+
 
 ###############################################################################
 # Remove the unnecessary tagged images
@@ -193,8 +207,8 @@ docker image rm $APP_TYPE/bkp/$APP_NAME:${BUILD_VERSION}
 docker image rm $APP_TYPE/nosquash/$APP_NAME:${BUILD_VERSION}
 set -e
 
+
 ###############################################################################
 # Print the README
 ###############################################################################
-sed -i "s#BUILD_VERSION#$BUILD_VERSION#g" README
 cat README

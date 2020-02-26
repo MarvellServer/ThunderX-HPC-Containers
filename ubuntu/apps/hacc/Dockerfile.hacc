@@ -39,14 +39,12 @@ COPY  data/indat      /docker/run/
 COPY  data/cmbM000.tf  /docker/run/
 COPY  data/run.sh           /docker/run/
 
-# copy dockerfile and build files to docker/src
 FROM  runtime
 COPY  --from=ucx /usr/local /usr/local
 COPY  --from=openmpi /usr/local /usr/local
 COPY  --from=fftw3 /usr/local /usr/local
 COPY  --from=hacc /usr/local/hacc/bin /usr/local/hacc/bin
 COPY  --from=hacc /docker/run /docker/run
-COPY  data/ /docker/src/data
 ENV   PATH /usr/local/hacc/bin:${PATH}
 
 # author

@@ -9,7 +9,6 @@ ENV	CFLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -DTIMER_USE_
 
 #Create required directories
 RUN     mkdir -p /docker/run && \
-	mkdir -p /docker/src && \
 	mkdir -p /usr/local/amg/bin
 
 #Download Source code
@@ -38,7 +37,6 @@ COPY    --from=openmpi /usr/local /usr/local
 
 COPY	--from=amg /usr/local/amg/bin /usr/local/amg/bin
 COPY	/data/ /docker/run/
-COPY	/data/ /docker/src/data
 
 ENV	PATH=/usr/local/amg/bin/:${PATH}
 ENTRYPOINT /bin/bash /docker/run/run.sh

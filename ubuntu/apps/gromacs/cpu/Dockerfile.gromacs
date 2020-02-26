@@ -60,7 +60,6 @@ COPY    --from=cmake /usr/local /usr/local
 COPY	--from=gromacs /usr/local/gromacs /usr/local/gromacs
 COPY	/data/ /docker/run/
 COPY	--from=gromacs /ADH_bench_systems.tar.gz /docker/run/
-COPY	/data/ /docker/src/data
 
 ENV	PATH=/usr/local/gromacs/bin/:${PATH}
 ENTRYPOINT /bin/bash /docker/run/run.sh
