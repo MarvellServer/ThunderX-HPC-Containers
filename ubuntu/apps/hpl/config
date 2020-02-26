@@ -1,4 +1,4 @@
 APP_TYPE=hpc/cpu
 APP_NAME=hpl
 TOOLCHAIN=gcc
-COMPONENTS="devel ucx openmpi openblas runtime"
+COMPONENTS="devel_gcc8 ucx openmpi openblas runtime_gcc8"

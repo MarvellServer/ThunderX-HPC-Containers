@@ -177,9 +177,18 @@ set -e
 ###############################################################################
 # Start building
 ###############################################################################
+# Build the intermediate stages and tag them
+devel=`echo $COMPONENTS | awk '{print $1}'`
 for comp in $COMPONENTS; do
+	if [[ "$comp" == *"devel"* ]]; then
+		tag=$APP_TYPE/$comp:$BUILD_VERSION
+	elif [[ "$comp" == *"runtime"* ]]; then
+		tag=$APP_TYPE/$comp:$BUILD_VERSION
+	else
+		tag=$APP_TYPE/$devel/$comp:$BUILD_VERSION
+	fi
 	# Build the components one by one and name them
-	docker build --target $comp -t $APP_TYPE/$comp:$BUILD_VERSION .
+	docker build --target $comp -t $tag .
 done
 docker build --target $APP_NAME -t $APP_TYPE/build/$APP_NAME:$BUILD_VERSION .
 # Build the app

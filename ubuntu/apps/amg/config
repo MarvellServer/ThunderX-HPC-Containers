@@ -1,4 +1,4 @@
 APP_TYPE=hpc
 APP_NAME=amg
 TOOLCHAIN=gcc
-COMPONENTS="base devel ucx openmpi runtime"
+COMPONENTS="base devel_gcc8 ucx openmpi runtime_gcc8"

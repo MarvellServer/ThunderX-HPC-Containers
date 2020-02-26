@@ -1,9 +1,11 @@
-devel           gcc-8.3.0
-runtime         ubuntu-18.04
-cuda_devel      10.2-devel-ubuntu18.04,gcc-8.3.0
-cuda_runtime    10.2-devel-ubuntu18.04
+devel_gcc8      ubuntu-18.04,gcc-8.3.0
+devel_gcc9      ubuntu-18.04,gcc-9.2.0-glibc-2.30
+devel_cuda10    10.2-devel-ubuntu18.04,gcc-8.3.0
+runtime_gcc8    ubuntu-18.04,gcc-8.3.0
+runtime_gcc9    ubuntu-18.04,gcc-9.2.0-glibc-2.30
+runtime_cuda10  10.2-devel-ubuntu18.04,gcc-8.3.0
 boost		1.72.0
-cmake		3.14.5
+cmake		3.16.3
 cuda		10.2
 fftw3		3.8
 hdf5		1.10.6

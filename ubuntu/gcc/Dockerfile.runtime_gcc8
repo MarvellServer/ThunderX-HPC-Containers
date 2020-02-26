@@ -1,7 +1,7 @@
 ###############################################################################
-# RUNTIME                                                                     #
+# RUNTIME_GCC8                                                                #
 ###############################################################################
-FROM ubuntu:18.04 AS runtime
+FROM ubuntu:18.04 AS runtime_gcc8
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         sudo \
@@ -21,3 +21,6 @@ RUN     groupadd -r guest && \
 # Setup environment paths
 ENV     PATH=/usr/local/bin:${PATH} \
         LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH
+
+
+FROM runtime_gcc8 as  runtime

@@ -1,7 +1,7 @@
 ###############################################################################
-# DEVEL                                                                       #
+# DEVEL_GCC9                                                                  #
 ###############################################################################
-FROM ubuntu:18.04 as devel9
+FROM ubuntu:18.04 as devel_gcc9
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	wget \
@@ -50,8 +50,8 @@ RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
 ENV     PATH=/usr/local/bin:${PATH}
 RUN mkdir -p /docker/build
 
-COPY data/devel9/config /docker/build/.config
-COPY data/devel9/postinstall.sh /docker/build/postinstall.sh
+COPY data/devel_gcc9/config /docker/build/.config
+COPY data/devel_gcc9/postinstall.sh /docker/build/postinstall.sh
 
 #BUILD ct-ng tools
 RUN mkdir -p /tmp/ct-ng && \
@@ -98,4 +98,5 @@ ENV LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-
 ENV LDFLAGS="${LDFLAGS} -L/usr/lib/aarch64-linux-gnu"
 ENV LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/usr/lib/aarch64-linux-gnu"
 ENV LDFLAGS="-L/usr/local/lib -Wl,-rpath=/usr/local/lib -Wl,-rpath-link=/usr/local/lib ${LDFLAGS}"
-FROM devel9 AS devel
+
+FROM devel_gcc9 AS devel

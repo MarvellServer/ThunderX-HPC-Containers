@@ -1,7 +1,8 @@
 ###############################################################################
-# DEVEL                                                                       #
+# DEVEL_CUDA10                                                                #
 ###############################################################################
-FROM ubuntu:18.04 as devel
+FROM nvcr.io/hpc-publisher/armsc19/cuda:10.2-devel-ubuntu18.04 as devel_cuda10
+
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
 	wget \
@@ -17,9 +18,9 @@ RUN apt-get update -y && \
         g++-8 \
         gcc-8 \
 	sudo \
-        libnuma-dev \
 	hwloc \
 	libhwloc-dev \
+        libnuma-dev \
         openssh-client \
         gfortran-8 && \
     rm -rf /var/lib/apt/lists/*
@@ -30,7 +31,14 @@ RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
     update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
 
 # Setup environment paths
-ENV    PATH=/usr/local/bin:${PATH} \
-       LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
-       LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
+ENV PATH=/usr/local/cuda-10.2/bin:$PATH
+ENV LD_LIBRARY_PATH=/usr/local/cuda-10.2/targets/aarch64-linux/lib/:$LD_LIBRARY_PATH
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+ENV     PATH=/usr/local/bin:${PATH} \
+        LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH \
+        LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
 	CC=gcc CXX=g++ FC=gfortran
+
+FROM  devel_cuda10 as devel

@@ -45,7 +45,6 @@ LABEL   MAINTAINER="Prince Takkar"
 LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
 LABEL   OPENMC_VERSION="OPENMC-0.11.0"
 
-COPY    --from=devel /opt/gcc-9.2.0-glibc-2.30 /opt/gcc-9.2.0-glibc-2.30
 COPY    --from=openmpi /usr/local/ /usr/local/
 COPY    --from=hdf5 /usr/local/ /usr/local/
 

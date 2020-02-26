@@ -1,4 +1,4 @@
 APP_TYPE=hpc/cpu
 APP_NAME=cp2k
 TOOLCHAIN=gcc
-COMPONENTS="devel ucx cmake openmpi fftw3 openblas scalapack runtime"
+COMPONENTS="devel_gcc8 ucx cmake openmpi fftw3 openblas scalapack runtime_gcc8"
