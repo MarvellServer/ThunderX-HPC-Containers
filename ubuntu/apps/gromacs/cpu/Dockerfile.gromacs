@@ -62,8 +62,5 @@ COPY	/data/ /docker/run/
 COPY	--from=gromacs /ADH_bench_systems.tar.gz /docker/run/
 COPY	/data/ /docker/src/data
 
-RUN     chown -R guest:guest /docker/run
-
-USER    guest
 ENV	PATH=/usr/local/gromacs/bin/:${PATH}
 ENTRYPOINT /bin/bash /docker/run/run.sh

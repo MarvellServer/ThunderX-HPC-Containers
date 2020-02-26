@@ -73,8 +73,6 @@ COPY    --from=openmpi /usr/local 		/usr/local
 ENV     PATH=/docker/run/bin/:${PATH}
 COPY    --from=specfem3d /docker/run 		/docker/run
 COPY    ./data 	/docker/src/data
-RUN     chown -R guest:guest /docker
-USER    guest
 
 ENTRYPOINT sh "/docker/run/run.sh"
  

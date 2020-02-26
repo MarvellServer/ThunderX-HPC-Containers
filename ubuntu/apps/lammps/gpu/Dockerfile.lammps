@@ -103,9 +103,6 @@ RUN	apt-get update -y && \
 	  libcublas10 && \
 	rm -rf /var/lib/apt/lists/*
 
-RUN     chown -R guest:guest /docker/run
-
-USER    guest
 ENV	PATH=/usr/local/lammps/bin/:${PATH}
 ENV	LD_LIBRARY_PATH=/usr/local/lammps/lib:${LD_LIBRARY_PATH}
 ENTRYPOINT /bin/bash /docker/run/run.sh

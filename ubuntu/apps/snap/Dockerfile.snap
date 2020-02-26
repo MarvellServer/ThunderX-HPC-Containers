@@ -40,6 +40,4 @@ ENV     PATH=/usr/local/snap/bin/:${PATH}
 COPY    --from=snap /usr/local/snap/bin /usr/local/snap/bin
 COPY    --from=snap /docker/run /docker/run
 COPY    data/ /docker/src/data
-USER    guest
-RUN     sudo chown -R guest:guest /docker/run/
 ENTRYPOINT  sh "/docker/run/run.sh"

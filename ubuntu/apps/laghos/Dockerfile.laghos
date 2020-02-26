@@ -89,6 +89,4 @@ LABEL  MAINTAINER_EMAIL="syalavarthi@marvell.com"
 LABEL  LAGHOS_VERSION="Laghos / CTS2"
 
 # launch
-USER        guest
-RUN         sudo chown -R guest:guest /docker/run/
 ENTRYPOINT  bash "/docker/run/run.sh"

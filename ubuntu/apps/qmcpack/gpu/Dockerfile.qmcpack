@@ -92,8 +92,5 @@ RUN	apt-get update -y && \
 COPY    data/run.sh /docker/src/data
 COPY    data/NiO-fcc-S32-dmc.xml /docker/src/data
 
-RUN     chown -R guest:guest /docker/run
-
-USER    guest
 ENV	PATH=/usr/local/qmcpack/bin/:${PATH}
 ENTRYPOINT sh "/docker/run/run.sh"

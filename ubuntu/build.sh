@@ -50,6 +50,19 @@ for comp in $COMPONENTS; do
 	cat $LIBDOCKER_DIR/Dockerfile.$comp >> Dockerfile
 done
 cat $APPDOCKER_DIR/Dockerfile.${APP_NAME} >> Dockerfile
+
+###############################################################################
+# Change to user guest
+###############################################################################
+echo -e "\n\n# Change to user guest\n" >> Dockerfile
+echo "USER    root" >> Dockerfile
+echo "RUN     mkdir -p /docker" >> Dockerfile
+echo "RUN     chown -R guest:guest /docker/" >> Dockerfile
+echo "USER    guest" >> Dockerfile
+
+###############################################################################
+# Add the command to copy the Dockerfiles into the image
+###############################################################################
 # These files should be always copied to the image
 echo "RUN     mkdir -p /docker/src" >> Dockerfile
 echo "COPY    docker_build.sh /docker/src" >> Dockerfile

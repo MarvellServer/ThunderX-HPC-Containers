@@ -78,9 +78,6 @@ COPY	--from=lammps /usr/local/lammps /usr/local/lammps
 COPY	/data/ /docker/run/
 COPY	/data/ /docker/src/data
 
-RUN     chown -R guest:guest /docker/run
-
-USER    guest
 ENV	PATH=/usr/local/lammps/bin/:${PATH}
 ENV	LD_LIBRARY_PATH=/usr/local/lammps/lib:${LD_LIBRARY_PATH}
 ENTRYPOINT /bin/bash /docker/run/run.sh
