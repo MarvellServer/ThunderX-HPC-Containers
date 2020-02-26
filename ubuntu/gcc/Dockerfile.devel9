@@ -1,0 +1,101 @@
+###############################################################################
+# DEVEL                                                                       #
+###############################################################################
+FROM base as devel9
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	wget \
+        git \
+        automake \
+        autoconf \
+        libtool \
+	m4 \
+	pkg-config \
+        ca-certificates \
+        python \ 
+	python-dev \
+	flex \
+	texinfo \
+        help2man \
+ 	unzip \
+	make \
+	gawk \
+	libtool-bin \
+	libncurses5-dev \
+	bison \
+	rsync \
+	libssl-dev \
+	python3-pip \
+	python3.6-dev \
+	python3-dev && \
+	rm -rf /var/lib/apt/lists/*
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
+    update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++-8 \
+        gcc-8 \
+	sudo \
+        libnuma-dev \
+        openssh-client \
+        gfortran-8 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
+    update-alternatives --install /usr/bin/g++ g++ $(which g++-8) 30 && \
+    update-alternatives --install /usr/bin/gfortran gfortran $(which gfortran-8) 30 && \
+    update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
+
+ENV     PATH=/usr/local/bin:${PATH}
+RUN mkdir -p /docker/build
+
+COPY data/config /docker/build/.config
+COPY data/postinstall.sh /docker/build/postinstall.sh
+
+#BUILD ct-ng tools
+RUN mkdir -p /tmp/ct-ng && \
+    cd /tmp/ct-ng && \
+    git clone https://github.com/crosstool-ng/crosstool-ng.git && \
+    cd crosstool-ng && \
+    ./bootstrap && ./configure --prefix=/usr/local && \
+    make -j && make install && \
+    rm -rf /tmp/ct-ng
+
+ENV CT_EXPERIMENTAL=y  \
+    CT_ALLOW_BUILD_AS_ROOT=y  \
+    CT_ALLOW_BUILD_AS_ROOT_SURE=y
+
+#BUILD gcc-9.2.0-glibc-2.30
+RUN cd /docker/build && \
+    ct-ng build && \
+    rm -rf /tmp/packages && \
+    sh postinstall.sh
+
+# fix libtool due to a crosstool-ng issue
+RUN sed -i 's#/tmp/packages/work/tools/bin/##' /opt/gcc-9.2.0-glibc-2.30/bin/libtool
+RUN sed -i 's#/tmp/packages/work/tools/bin/##' /opt/gcc-9.2.0-glibc-2.30/bin/libtoolize
+RUN sed -i 's#^NM.*#NM=\"nm -B\"#' /opt/gcc-9.2.0-glibc-2.30/bin/libtool
+RUN find /opt/gcc-9.2.0-glibc-2.30/ -type f -exec file {} \; | grep "ELF 64-bit LSB executable"    | cut -d ":" -f 1-1 | xargs /usr/bin/aarch64-linux-gnu-strip
+RUN find /opt/gcc-9.2.0-glibc-2.30/ -type f -exec file {} \; | grep "ELF 64-bit LSB shared object" | cut -d ":" -f 1-1 | xargs /usr/bin/aarch64-linux-gnu-strip
+RUN rm -rf /docker/build/build.log
+
+ENV PATH=/opt/gcc-9.2.0-glibc-2.30/bin:/usr/local/bin:${PATH}
+ENV CFLAGS="-idirafter /usr/include"
+ENV CXXFLAGS="-idirafter /usr/include"
+ENV FFLAGS="-idirafter /usr/include"
+ENV FCFLAGS="-idirafter /usr/include"
+ENV LDFLAGS="-Wl,-dynamic-linker=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/ld-2.30.so"
+ENV LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libc.so.6"
+ENV LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libm.so.6"
+ENV LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libdl.so.2"
+ENV LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/libpthread.so.0"
+ENV LDFLAGS="${LDFLAGS} /opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64/librt.so.1"
+ENV LDFLAGS="${LDFLAGS} -Wl,-rpath=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib"
+ENV LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib"
+ENV LDFLAGS="${LDFLAGS} -Wl,-rpath=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64"
+ENV LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/opt/gcc-9.2.0-glibc-2.30/aarch64-linux-gnu/sysroot/lib64"
+ENV LDFLAGS="${LDFLAGS} -L/usr/lib/aarch64-linux-gnu"
+ENV LDFLAGS="${LDFLAGS} -Wl,-rpath-link=/usr/lib/aarch64-linux-gnu"
+ENV LDFLAGS="-L/usr/local/lib -Wl,-rpath=/usr/local/lib -Wl,-rpath-link=/usr/local/lib ${LDFLAGS}"
+FROM devel9 AS devel

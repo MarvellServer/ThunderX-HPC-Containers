@@ -1,0 +1,64 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS openmc
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+COPY    --from=hdf5 /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/openmc/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /usr/local/openmc/lib/
+
+# Download source
+RUN cd /tmp && \
+    wget https://github.com/openmc-dev/openmc/archive/v0.11.0.tar.gz && \
+    tar -zxvf v0.11.0.tar.gz
+
+# Build OPENMC
+RUN cd /tmp/openmc-0.11.0 && \
+    mkdir build && cd build 
+RUN cd /tmp/openmc-0.11.0/build && \
+    cmake \
+    -DCMAKE_C_COMPILER=mpicc \
+    -DCMAKE_CXX_COMPILER=mpicxx \
+    -DCMAKE_CXX_FLAGS:STRING="-O3 -g -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp" \
+    -DCMAKE_C_FLAGS:STRING="-O3 -g -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp" \
+    -Doptimize=on \
+    -Dopenmp=on \
+    .. && \
+    make -j64 && make install && \
+   cp -r /tmp/openmc-0.11.0/build/bin/openmc /usr/local/openmc/bin/ && \
+   cp -r /tmp/openmc-0.11.0/build/lib/* /usr/local/openmc/lib/ && \
+   rm -rf /tmp/
+
+#   sed -i 's/-2 / /g' CMakeFiles/openmc.dir/link.txt && \
+#   sed -i 's/-2 / /g' CMakeFiles/libopenmc.dir/link.txt && \
+
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   OPENMC_VERSION="OPENMC-0.11.0"
+
+COPY    --from=devel /opt/gcc-9.2.0-glibc-2.30 /opt/gcc-9.2.0-glibc-2.30
+COPY    --from=openmpi /usr/local/ /usr/local/
+COPY    --from=hdf5 /usr/local/ /usr/local/
+
+COPY    --from=openmc /usr/local/openmc/bin /usr/local/openmc/bin
+COPY    --from=openmc /usr/local/openmc/lib /usr/local/lib
+COPY  data/geometry.xml /docker/run/DATA/
+COPY  data/plots.xml /docker/run/DATA/
+COPY  data/materials.xml /docker/run/DATA/
+COPY  data/settings.xml /docker/run/DATA/
+COPY  data/run.sh /docker/run
+
+ENV     PATH=/usr/local/openmc/bin/:/opt/gcc-9.2.0-glibc-2.30/bin:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+#RUN     chown -R guest:guest /docker/run
+
+#USER    guest

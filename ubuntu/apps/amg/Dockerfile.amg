@@ -1,0 +1,47 @@
+###############################################################################
+# AMG                                                                     #
+###############################################################################
+FROM    devel AS amg
+
+COPY    --from=openmpi /usr/local /usr/local
+
+ENV	CFLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -DTIMER_USE_MPI -DHYPRE_USING_OPENMP -fopenmp -DHYPRE_HOPSCOTCH -DHYPRE_USING_PERSISTENT_COMM -DHYPRE_BIGINT"
+
+#Create required directories
+RUN     mkdir -p /docker/run && \
+	mkdir -p /docker/src && \
+	mkdir -p /usr/local/amg/bin
+
+#Download Source code
+RUN	mkdir -p /tmp/amg && \
+   	cd /tmp/amg && \
+	wget https://github.com/LLNL/AMG/archive/1.2.tar.gz && \
+	tar -zxvf 1.2.tar.gz
+
+#Copy makefile
+COPY	data/Makefile /tmp/amg/AMG-1.2/
+COPY	data/Makefile.include /tmp/amg/AMG-1.2/
+
+#Build the source
+RUN	cd /tmp/amg/AMG-1.2 && \
+	make veryclean && \
+	sed -i "s/__CFLAGS__/$CFLAGS/g" Makefile.include && \
+	make && \
+	cp -r /tmp/amg/AMG-1.2/test/amg /usr/local/amg/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   AMG_VERSION="AMG-1.2"
+
+COPY    --from=openmpi /usr/local /usr/local
+
+COPY	--from=amg /usr/local/amg/bin /usr/local/amg/bin
+COPY	/data/ /docker/run/
+COPY	/data/ /docker/src/data
+
+RUN     chown -R guest:guest /docker/run
+
+USER    guest
+ENV	PATH=/usr/local/amg/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
