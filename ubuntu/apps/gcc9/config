@@ -1,4 +1,0 @@
-APP_TYPE=hpc/cpu
-APP_NAME=gcc9
-TOOLCHAIN=gcc
-COMPONENTS="base devel"
