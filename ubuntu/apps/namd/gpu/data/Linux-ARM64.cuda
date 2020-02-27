@@ -1,0 +1,12 @@
+CUDADIR=/usr/local/cuda
+CUDAINCL=-I$(CUDADIR)/include
+CUBDIR=.rootdir/cub
+CUBINCL=-I$(CUBDIR)
+CUDALIB=-L$(CUDADIR)/lib64 -L$(CUDADIR)/lib64/stubs -lcudart_static -lrt -lcufft
+CUDASODIR=$(CUDADIR)/lib/stubs
+LIBCUDARTSO=libcudart.so
+CUDAFLAGS=-DNAMD_CUDA
+CUDAOBJS=$(CUDAOBJSRAW)
+CUDA=$(CUDAFLAGS) -I. $(CUDAINCL) $(CUBINCL)
+LIBCUFFTSO=libcufft.so
+CUDACC=$(CUDADIR)/bin/nvcc -O3 $(CUDAGENCODE) $(CUDA)

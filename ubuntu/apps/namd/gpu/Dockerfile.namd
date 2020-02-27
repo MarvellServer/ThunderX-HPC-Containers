@@ -1,0 +1,79 @@
+###############################################################################
+# NAMD                                                                        #
+###############################################################################
+FROM    devel AS namd
+
+#Create required directories
+
+RUN	mkdir -p /tmp/charm && \
+	cd /tmp/charm && \
+ 	git clone --depth 1 -b v6.10.0-rc2 https://github.com/UIUC-PPL/charm && \
+	cd charm && \
+	./build charm++ multicore-arm8 --basedir=/usr/local/ -j$(nproc) --with-production --no-build-shared && \
+	mkdir -p /usr/local/charm && \
+	cp -L -r multicore-arm8 /usr/local/charm
+	
+RUN	mkdir -p /tmp/namd && \
+	cd /tmp/namd && \
+	git clone https://charm.cs.illinois.edu/gerrit/namd.git namd && \
+	cd namd && \
+	git checkout 7d0d1f514dac73f19b1bc657f29f6be2058fb4ff && \
+	wget http://www.ks.uiuc.edu/Research/namd/libraries/tcl8.5.9-linux-arm64-threaded.tar.gz && \
+	tar xzf tcl8.5.9-linux-arm64-threaded.tar.gz && \
+	mv tcl8.5.9-linux-arm64-threaded tcl-threaded
+
+COPY    ./data/Linux-ARM64-g++.arch /tmp/namd/namd/arch
+COPY    ./data/Linux-ARM64.cuda /tmp/namd/namd/arch
+
+RUN     cd /tmp/namd/namd/ && \
+	./config Linux-ARM64-g++ \
+	    --charm-base /usr/local/charm \
+	    --charm-arch multicore-arm8 \
+            --with-tcl \
+            --tcl-prefix $(pwd)/tcl-threaded \
+            --without-fftw \
+            --with-cuda \
+            --cuda-prefix /usr/local/cuda \
+            --cuda-gencode arch=compute_70,code=sm_70 \
+            --cuda-dlink arch=compute_70,code=sm_70 \
+            --without-python
+
+RUN     cd /tmp/namd/namd/Linux-ARM64-g++ && \
+        make -j $(nproc) && \
+        mkdir -p /usr/local/namd/bin && \
+        cp  namd2 charmrun flipbinpdb flipdcd psfgen sortreplicas /usr/local/namd/bin
+
+
+FROM    runtime
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
+LABEL   LAMMPS_VERSION="commit-7d0d1f514dac73f19b1bc657f29f6be2058fb4ff"
+
+COPY	--from=namd /usr/local/namd /usr/local/namd
+RUN     mkdir -p /docker/run
+
+# Remove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  g++7 gcc-7 cpp-7 gcc g++ "*-dev*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  cuda-curand-10-2 \
+	  cuda-cusolver-10-2 \
+	  cuda-cusparse-10-2 \
+	  cuda-npp-10-2 \
+	  cuda-nvgraph-10-2 \
+	  cuda-nvrtc-10-2 \
+	  cuda-libraries-10-2 \
+	  libcublas10 && \
+	rm -rf /var/lib/apt/lists/*
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+   	python wget && \
+   	rm -rf /var/lib/apt/lists/*
+
+COPY    ./data/run.sh /docker/run/run.sh
+
+ENV	PATH=/usr/local/namd/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
