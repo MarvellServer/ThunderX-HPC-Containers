@@ -1,0 +1,10 @@
+NAMD_ARCH = Linux-ARM64
+
+FLOATOPTS = -O3 -ffast-math -funsafe-math-optimizations -fomit-frame-pointer -mcpu=thunderx2t99 -march=armv8.1-a+lse -fopenmp -fprefetch-loop-arrays -funroll-loops -fPIC
+
+CXX = g++ -std=c++11
+CXXOPTS = $(FLOATOPTS)
+CXXNOALIASOPTS = $(FLOATOPTS) -fno-strict-aliasing
+
+CC = gcc
+COPTS = $(FLOATOPTS)

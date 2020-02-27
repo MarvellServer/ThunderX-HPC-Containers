@@ -1,0 +1,4 @@
+APP_TYPE=hpc/cpu
+APP_NAME=namd
+TOOLCHAIN=gcc
+COMPONENTS="devel_gcc8 ucx openmpi openblas fftw3 cmake runtime_gcc8"

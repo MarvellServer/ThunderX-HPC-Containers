@@ -1,0 +1,6 @@
+FFTDIR=/usr/local
+FFTINCL=-I$(FFTDIR)/include
+FFTLIB=-L$(FFTDIR)/lib/aarch64-linux-gnu -lfftw3f
+FFTFLAGS=-DNAMD_FFTW -DNAMD_FFTW_3
+FFT=$(FFTINCL) $(FFTFLAGS)
+
