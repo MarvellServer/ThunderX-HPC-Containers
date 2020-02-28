@@ -1,24 +1,24 @@
 export CC=gcc
 export CXX=g++
 export FC=gfortran
-export OPT="-g -w -Ofast -mcpu=thunderx2t99 -march=armv8.1-a+lse"
+export OPT="-g -w -Ofast -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
 
 export HACC_PLATFORM="tx2-gcc-mpi"
 export HACC_OBJDIR="$HACC_PLATFORM"
 
 export HACC_CC=$CC
-export HACC_CFLAGS="$OPT"
+export HACC_CFLAGS="${OPT}"
 
 export HACC_CXX=$CXX
-export HACC_CXXFLAGS="$OPT -std=c++98"
+export HACC_CXXFLAGS="${OPT} -std=c++98"
 
 export HACC_MPI_CC=mpicc
-export HACC_MPI_CFLAGS="$OPT -std=c99"
+export HACC_MPI_CFLAGS="${OPT} -std=c99"
 
 export HACC_MPI_CXX=mpic++
-export HACC_MPI_CXXFLAGS="$OPT -std=c++98"
+export HACC_MPI_CXXFLAGS="${OPT} -std=c++98"
 
-#export HACC_MPI_LDFLAGS=
+export HACC_MPI_LDFLAGS=${LDFLAGS}
 
 export FFTW_WRAPPER=none
 export FFTW_MAJOR_VERSION=3

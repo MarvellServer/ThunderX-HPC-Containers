@@ -1,4 +1,4 @@
 APP_TYPE=hpc/cpu
 APP_NAME=hacc
 TOOLCHAIN=gcc
-COMPONENTS="devel_gcc8 ucx openmpi fftw3 runtime_gcc8"
+COMPONENTS="devel_gcc9 ucx openmpi fftw3 runtime_gcc9"
