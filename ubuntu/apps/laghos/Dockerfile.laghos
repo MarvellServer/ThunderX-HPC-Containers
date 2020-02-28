@@ -26,8 +26,8 @@ RUN   mkdir -p /tmp/laghos && \
       tar -xzvf cts2.tar.gz
 
 # define build env
-ARG   CFLAGS="-w -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse"
-ARG   CXXFLAGS="-w -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse"
+ENV   CFLAGS="-w -s -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
+ENV   CXXFLAGS="-w  -s -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
 
 # build : hypre
 RUN   cd /tmp/laghos/hypre-2.10.0b/src/ && \
@@ -37,7 +37,7 @@ RUN   cd /tmp/laghos/hypre-2.10.0b/src/ && \
 # build : metis
 RUN   cd /tmp/laghos/metis-4.0.3/ && \
       sed -i "s/CC = .*/CC = gcc/" Makefile.in && \
-      sed -i "s/OPTFLAGS = .*/OPTFLAGS = ${CFLAGS}/" Makefile.in && \
+      sed -i "s#OPTFLAGS = .*#OPTFLAGS = ${CFLAGS}#" Makefile.in && \
       make && \
       cd .. && \
       mv metis-4.0.3 metis-4.0
@@ -52,6 +52,7 @@ RUN   cd /tmp/laghos/RAJA-0.7.0 && \
 
 # build : MFEM
 RUN   cd /tmp/laghos/mfem-laghos-cts2/ && \
+      sed -i 's#^GHV_FLAGS.*#& ${LDFLAGS}#' config/makefile && \
       make parallel MFEM_USE_RAJA=YES -j65 && \
       cd .. && \
       mv mfem-laghos-cts2 mfem
