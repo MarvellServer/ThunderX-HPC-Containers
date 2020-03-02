@@ -1,0 +1,31 @@
+#conditions.add("testing")
+#conditions.add("python")
+
+# install directory
+prefix = '/usr/local'
+
+#build_policy = "all"
+
+# List of modules to be built by default
+modules = ['yaml',]
+
+# Specific configure arguments for each module
+module_autogenargs['yaml'] = " "
+
+module_autogenargs['futile'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+
+module_autogenargs['atlab'] = "FC=mpifort"
+
+module_autogenargs['psolver'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+
+module_autogenargs['chess'] = "FC=mpifort"
+
+module_autogenargs['libxc'] = "CC=gcc --disable-shared"
+
+module_autogenargs['libABINIT'] = "FC=mpifort"
+
+module_autogenargs['bigdft'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+
+module_autogenargs['spred'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+
+#module_autogenargs['PyYAML'] = "build --build-base /tmp/bigdft/bigdft-suite/build/PyYAML build_ext -I%(prefix)s/include -L%(prefix)s/lib --rpath=%(prefix)s/lib" % {"prefix": prefix}

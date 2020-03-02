@@ -1,0 +1,87 @@
+###############################################################################
+# BigDFT / CTS2                                                               #
+###############################################################################
+FROM    devel AS bigdft
+
+COPY  --from=ucx /usr/local /usr/local
+COPY  --from=openmpi /usr/local /usr/local
+COPY  --from=openblas /usr/local /usr/local
+
+# fetch : all sources and extract
+RUN   mkdir -p /tmp/bigdft && \
+      cd /tmp/bigdft && \
+      git clone https://gitlab.com/l_sim/bigdft-suite.git && \
+      cd bigdft-suite && \
+      git fetch --all && \
+      git checkout 1.9.0
+
+# update setuptools -  for PyBigDFT 
+RUN apt-get update && \
+    apt-get -y install python-pip
+RUN python2 -m pip install --upgrade setuptools
+
+# patch - jhbuildrc
+RUN cd /tmp/bigdft/bigdft-suite && \
+    sed -i "s/disable_Werror = True/disable_Werror = False/" bundler/jhbuild/defaults.jhbuildrc
+
+# patch - futile
+RUN cd /tmp/bigdft/bigdft-suite && \
+    cd futile && \
+    autoreconf -fi && \
+    sed -i "s/-lblas/-lopenblas/" configure && \
+    sed -i "s/-llapack/-lopenblas/" configure && \
+    sed -i "s/-lblas/-lopenblas/" configure && \
+    sed -i "s/-llapack/-lopenblas/" configure
+
+# patch - bigdft.modules
+RUN cd /tmp/bigdft/bigdft-suite && \
+    sed -i '116s/<!--//' bigdft.modules && \
+    sed -i '116s/-->//' bigdft.modules && \
+    sed -i '117s/^    /    <!--/' bigdft.modules && \
+    sed -i '117s/$/-->/' bigdft.modules
+
+# patch - bigdft
+RUN cd /tmp/bigdft/bigdft-suite && \
+    cd bigdft && \
+    autoreconf -fi && \
+    sed -i "s/-lblas/-lopenblas/" configure && \
+    sed -i "s/-llapack/-lopenblas/" configure && \
+    sed -i "s/-lblas/-lopenblas/" configure && \
+    sed -i "s/-llapack/-lopenblas/" configure
+
+# copy config file
+RUN mkdir -p /tmp/bigdft/bigdft-suite/build
+COPY data/thunderx2.rc /tmp/bigdft/bigdft-suite/build
+
+# set environment
+ENV CFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
+ENV CXXFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CXXFLAGS}"
+ENV FCFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${FCFLAGS}"
+
+# build
+ENV JHBUILD_RUN_AS_ROOT=1
+RUN cd /tmp/bigdft/bigdft-suite/build && \
+    python2 ../Installer.py -y build -f thunderx2.rc
+
+# copy run script and input files
+RUN   mkdir -p /docker/run
+COPY  data/run.sh /docker/run/
+COPY  data/posinp.xyz /docker/run/
+COPY  data/input.dft /docker/run/
+
+FROM  runtime
+COPY  --from=ucx /usr/local /usr/local
+COPY  --from=openmpi /usr/local /usr/local
+COPY  --from=openblas /usr/local /usr/local
+COPY  --from=bigdft /usr/local /usr/local
+COPY  --from=bigdft /docker/run /docker/run
+ENV   PATH /usr/local/bigdft/bin:${PATH}
+ENV   LD_LIBRARY_PATH /usr/local/bigdft/lib:${LD_LIBRARY_PATH}
+
+# author
+LABEL  MAINTAINER="Srikanth Yalavarthi"
+LABEL  MAINTAINER_EMAIL="syalavarthi@marvell.com"
+LABEL  bigdft_VERSION="BigDFT 1.9.0"
+
+# launch
+ENTRYPOINT  bash "/docker/run/run.sh"
