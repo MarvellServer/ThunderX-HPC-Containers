@@ -1,0 +1,4 @@
+APP_TYPE=hpc/cpu
+APP_NAME=hoomd_blue
+TOOLCHAIN=gcc
+COMPONENTS="devel_gcc8 ucx openmpi openblas cmake runtime_gcc8"

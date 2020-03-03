@@ -1,0 +1,4 @@
+37c37
+< #if !defined(__x86_64__) && !defined(__i386__) && !defined(__powerpc__)
+---
+> #if !defined(__x86_64__) && !defined(__i386__) && !defined(__powerpc__) && !defined(__aarch64__)

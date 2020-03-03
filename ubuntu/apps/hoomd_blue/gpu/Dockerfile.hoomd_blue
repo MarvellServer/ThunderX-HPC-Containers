@@ -1,0 +1,70 @@
+###############################################################################
+# HOOMD BLUE                                                                  #
+###############################################################################
+FROM    devel AS hoomd_blue
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+   	python3.6 python3-pip python3-setuptools python3-dev && \
+   	rm -rf /var/lib/apt/lists/*
+
+RUN     update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc aarch64-linux-gnu-gcc $(which aarch64-linux-gnu-gcc-8) 30 && \
+	update-alternatives --install /usr/bin/aarch64-linux-gnu-gcc-ar aarch64-linux-gnu-gcc-ar $(which aarch64-linux-gnu-gcc-ar-8) 30
+
+ENV     PYTHONPATH=/tmp/hoomd_blue/python_modules/lib/python3.6/site-packages
+
+RUN     mkdir -p /tmp/hoomd_blue && \ 
+	pip3 install --ignore-installed --install-option="--prefix=/tmp/hoomd_blue/python_modules" cython && \
+	pip3 install --ignore-installed --install-option="--prefix=/tmp/hoomd_blue/python_modules" numpy
+
+COPY    data/gccfeatures.h.patch /tmp/hoomd_blue
+
+RUN     cd /tmp/hoomd_blue && \
+	wget http://glotzerlab.engin.umich.edu/Downloads/hoomd/hoomd-v2.9.0.tar.gz && \
+	tar -zxf hoomd-v2.9.0.tar.gz && \
+	patch hoomd-v2.9.0/hoomd/extern/random123/include/Random123/features/gccfeatures.h < /tmp/hoomd_blue/gccfeatures.h.patch && \
+	mkdir -p hoomd-v2.9.0/build
+
+RUN 	cd /tmp/hoomd_blue/hoomd-v2.9.0/build && \
+	cmake  \
+	  -DCMAKE_INSTALL_PREFIX="/tmp/hoomd_blue/python_modules/lib/python3.6/site-packages" \
+	  -DCMAKE_CXX_COMPILER=mpicxx \
+	  -DCMAKE_C_COMPILER=mpicc \
+	  -DCMAKE_CXX_FLAGS="-O3 -g -mcpu=thunderx2t99 -march=armv8.1-a+lse -fopenmp -fprefetch-loop-arrays -funroll-all-loops" \
+	  -DCMAKE_C_FLAGS="-O3 -g -mcpu=thunderx2t99 -march=armv8.1-a+lse -fopenmp -fprefetch-loop-arrays -funroll-all-loops" \
+	  -DENABLE_CUDA=ON \
+	  -DENABLE_MPI=ON \
+	  -DMPI_C_COMPILER=`which mpicc` \
+	  -DMPI_CXX_COMPILER=`which mpicxx` \
+	  ../ && \
+	make -j && \
+	make install
+
+RUN     cd /tmp/hoomd_blue && \
+	git clone --depth 1 https://github.com/joaander/hoomd-benchmarks.git
+
+
+FROM    runtime
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
+LABEL   HOOMD_BLUE_VERSION="v2.9.0"
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+   	python3.6 && \
+   	rm -rf /var/lib/apt/lists/*
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+
+COPY	--from=hoomd_blue /tmp/hoomd_blue/python_modules/lib/python3.6/site-packages/numpy /usr/local/hoomd_blue/numpy
+COPY	--from=hoomd_blue /tmp/hoomd_blue/python_modules/lib/python3.6/site-packages/hoomd /usr/local/hoomd_blue/hoomd
+COPY	--from=hoomd_blue /tmp/hoomd_blue/hoomd-benchmarks/microsphere /docker/run/
+COPY    data/run.sh /docker/run/run.sh
+
+ENV	PYTHONPATH=/usr/local/hoomd_blue
+ENTRYPOINT /bin/bash /docker/run/run.sh
