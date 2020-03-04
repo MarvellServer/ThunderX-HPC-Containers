@@ -1,0 +1,57 @@
+###############################################################################
+# CLOVERLEAF                                                                  #
+###############################################################################
+FROM    devel AS cloverleaf
+
+COPY    --from=openmpi /usr/local /usr/local
+
+# Set Variables and Flags
+ENV	CFLAGS="$CFLAGS $LDFLAGS -O3 -g -ffast-math -mcpu=thunderx2t99 -march=armv8.1-a+lse -fopenmp -fprefetch-loop-arrays -funroll-all-loops -cpp -ffree-line-length-none"
+
+# Download source
+RUN	mkdir -p /tmp/cloverleaf && \
+        cd /tmp/cloverleaf && \
+	git clone https://github.com/UK-MAC/CloverLeaf_CUDA.git && \
+	 cd /tmp/cloverleaf/CloverLeaf_CUDA && \
+	git checkout aec3bbfdca040be25c70fa9570ff2c5707b64ebc
+		
+# Copy Makefile
+COPY	data/Makefile /tmp/cloverleaf/CloverLeaf_CUDA
+
+# Build Cloverleaf
+RUN	cd /tmp/cloverleaf/CloverLeaf_CUDA && \
+	sed -i "s#__FLAGS__#$CFLAGS#g" Makefile && \
+	make clean && \
+	make COMPILER=GNU NV_ARCH=VOLTA  C_MPI_COMPILER=mpicc MPI_COMPILER=mpif90 OPTIONS="${CFLAGS}" C_OPTIONS="${CFLAGS}" -j
+
+FROM    runtime
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
+LABEL   CLOVERLEAF_VERSION="CloverLeaf_GPU-aec3bbfdca040be25c70fa9570ff2c5707b64ebc"
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=ucx /usr/local /usr/local
+ENV	PATH=/usr/local/cloverleaf/bin/:${PATH}
+RUN     mkdir -p /usr/local/cloverleaf/bin 
+COPY    --from=cloverleaf /tmp/cloverleaf/CloverLeaf_CUDA/clover_leaf /usr/local/cloverleaf/bin
+COPY    --from=cloverleaf /tmp/cloverleaf/CloverLeaf_CUDA/InputDecks/ /docker/run/InputDecks
+
+# Remove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  g++7 gcc-7 cpp-7 gcc g++ "*-dev*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  cuda-cufft-10-2 \
+	  cuda-curand-10-2 \
+	  cuda-cusolver-10-2 \
+	  cuda-cusparse-10-2 \
+	  cuda-npp-10-2 \
+	  cuda-nvgraph-10-2 \
+	  cuda-nvrtc-10-2 \
+	  cuda-libraries-10-2 \
+	  libcublas10 && \
+	rm -rf /var/lib/apt/lists/*
+
+COPY   data/run.sh /docker/run/run.sh
+ENTRYPOINT sh "/docker/run/run.sh"

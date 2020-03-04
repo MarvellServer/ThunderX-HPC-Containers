@@ -29,7 +29,7 @@ RUN	cd /tmp/cloverleaf/CloverLeaf_MPI-1.3 && \
 FROM    runtime
 LABEL   MAINTAINER="Ashwin Sekhar T K"
 LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
-LABEL   HPL_VERSION="CloverLeaf_MPI-1.3"
+LABEL   CLOVERLEAF_VERSION="CloverLeaf_MPI-1.3"
 
 COPY    --from=openmpi /usr/local /usr/local
 COPY    --from=ucx /usr/local /usr/local
