@@ -1,4 +1,3 @@
 APP_TYPE=hpc/cpu
 APP_NAME=specfem3d
-TOOLCHAIN=gcc
 COMPONENTS="devel_gcc8 ucx openmpi runtime_gcc8"

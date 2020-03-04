@@ -1,4 +1,3 @@
 APP_TYPE=hpc/cpu
 APP_NAME=bigdft
-TOOLCHAIN=gcc
 COMPONENTS="devel_gcc9 ucx openmpi openblas runtime_gcc9"

@@ -1,4 +1,3 @@
 APP_TYPE=hpc/gpu
 APP_NAME=hoomd_blue
-TOOLCHAIN=gcc
 COMPONENTS="devel_cuda10 ucx openmpi openblas cmake runtime_cuda10"

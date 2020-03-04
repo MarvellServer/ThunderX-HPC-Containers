@@ -1,4 +1,3 @@
 APP_TYPE=hpc/gpu
 APP_NAME=namd
-TOOLCHAIN=gcc
 COMPONENTS="devel_cuda10 ucx openmpi openblas fftw3 cmake runtime_cuda10"
