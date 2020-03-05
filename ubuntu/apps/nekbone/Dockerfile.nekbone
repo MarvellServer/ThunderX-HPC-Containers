@@ -1,0 +1,54 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS nekbone
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/nekbone/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+ENV OMPI_MPICC=gcc \
+    OMPI_MPICXX=mpicxx \
+    OMPI_FC=gfortran \
+    OMPI_MPIF77=mpif77 \
+    OMPI_MPIF90=mpif90 \
+    OPT_FLAGS_STD="-O3 -g -march=armv8.1-a+simd -fprefetch-loop-arrays -funroll-loops -fopenmp -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math -flto" \
+    USR_LFLAGS="-O3 -g -march=armv8.1-a+simd -fprefetch-loop-arrays -funroll-loops -fopenmp -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -flto"
+
+# Download source
+RUN cd /tmp && \
+    wget https://asc.llnl.gov/coral-2-benchmarks/downloads/nekbone_2_3_5.tgz && \
+    tar -zxvf nekbone_2_3_5.tgz
+
+#COPY INPUTFILES
+COPY data/makenek /tmp/nekbone/test/example1/
+COPY data/SIZE /tmp/nekbone/test/example1/
+COPY data/data.rea /tmp/nekbone/test/example1/
+
+#Build the code
+RUN cd /tmp/nekbone/test/example1 && \
+    sed -i 's#^CFE_FLAG=.*#CFE_FLAG=\"$USR_LFLAGS\"#' ../../src/makenek.inc && \
+    /bin/bash -c ./makenek -j "/tmp/nekbone/src" && \
+    cp -r ./ /usr/local/nekbone/bin/ && \ 
+    ldd ./nekbone
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   NEKBONE_VERSION="NEKBONE-2.3.5"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=nekbone /usr/local/nekbone/bin /usr/local/nekbone/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/nekbone/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

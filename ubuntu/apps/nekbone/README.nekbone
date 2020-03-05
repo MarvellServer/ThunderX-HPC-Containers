@@ -1,0 +1,9 @@
+------------
+NEKBONE NOTES
+------------
+App gives best performance with SMT=2.Set SMT=2, before runnning an application.
+
+
+Run the following command to run the docker
+docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/nekbone:2020.02-dev
+

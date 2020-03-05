@@ -1,0 +1,55 @@
+#!/bin/bash
+# Nek5000 build config file
+# (c) 2008,2009,2010 UCHICAGO ARGONNE, LLC
+
+# source path
+SOURCE_ROOT="../../src"
+
+# Fortran compiler
+F77="mpif77"
+
+# C compiler
+CC="mpicc"
+
+# pre-processor symbol list
+# (set PPLIST=? to get a list of available symbols)
+#PPLSIT="BGQ BGP K10_MXM TIMERS MPITIMER BGQTIMER CGTTIMER NITER=20 LOG MPITHREADS XSMM MXMBASIC MKL BLAS_MXM XSMM_FIXED XSMM_DISPATCH NPOLY=8"
+#PPLIST="TIMERS CGTIMERS"
+
+
+# OPTIONAL SETTINGS
+# -----------------
+
+# enable MPI (default true)
+#IFMPI="false"
+
+# auxilliary files to compile
+# NOTE: source files have to located in the same directory as makenek
+#       a makefile_usr.inc has to be provided containing the build rules
+#USR="foo.o"
+
+# linking flags
+USR_LFLAGS="-w -fopenmp ${LDFLAGS}"
+
+# generic compiler flags
+#G="-g"
+
+# optimization flags
+#OPT_FLAGS_STD="-O3 -g -w -march=armv8.1-a+simd -fprefetch-loop-arrays -funroll-loops -fopenmp -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math -flto"
+#OPT_FLAGS_MAG="-O3 -g -w -march=armv8.1-a+simd -fprefetch-loop-arrays -funroll-loops -fopenmp -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math -flto"
+
+###############################################################################
+# DONT'T TOUCH WHAT FOLLOWS !!!
+###############################################################################
+# assign version tag
+mver=1
+# overwrite source path with optional 2nd argument
+if [ -d $2 ] && [ $# -eq 2 ]; then
+  SOURCE_ROOT="$2"
+  echo "change source code directory to: ", $SOURCE_ROOT
+fi
+# do some checks and create makefile
+source $SOURCE_ROOT/makenek.inc
+# compile
+make -j4 -f makefile 2>&1 | tee compiler.out
+exit 0
