@@ -1,0 +1,4 @@
+APP_TYPE=hpc/cpu
+APP_NAME=milc
+TOOLCHAIN=gcc
+COMPONENTS="devel_gcc9 ucx openmpi openblas fftw3 runtime_gcc9"

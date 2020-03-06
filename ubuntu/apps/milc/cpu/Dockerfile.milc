@@ -1,0 +1,71 @@
+###############################################################################
+# LAMMPS                                                                     #
+###############################################################################
+FROM    devel AS milc
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+
+#Create required directories
+RUN     mkdir -p /docker/run && \
+	mkdir -p /docker/src && \
+	mkdir -p /usr/local/milc/bin
+
+#Install required libraries
+
+#QMP
+RUN mkdir -p /tmp/milc && cd /tmp/milc && \
+    wget -N https://github.com/usqcd-software/qmp/archive/qmp2-5-1.tar.gz && \
+    tar -zxf qmp2-5-1.tar.gz && \
+    cd qmp-qmp2-5-1 && \
+    ./configure --prefix=/usr/local CC=mpicc CXX=mpic++ CFLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays -funroll-loops" --with-qmp-comms-type=MPI && \
+    make -j && make install
+
+#QIO
+RUN cd /tmp/milc && \
+    git clone --recursive https://github.com/usqcd-software/qio.git qio_build && \
+    cd qio_build && \
+    autoreconf -f -i && \
+    ./configure --prefix=/usr/local CC=mpicc CFLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays -funroll-loops" && \
+    make && make install
+
+#Download Source code
+RUN	mkdir -p /tmp/milc && \
+   	cd /tmp/milc && \
+	git clone https://github.com/milc-qcd/milc_qcd.git && \
+	cd milc_qcd/ && \
+	git checkout develop
+
+COPY	data/Make_vanilla /tmp/milc/milc_qcd/libraries
+COPY	data/Makefile.cpu /tmp/milc/milc_qcd/ks_imp_rhmc/Makefile
+
+ENV	OCFLAGS="-O3 -funroll-all-loops -fprefetch-loop-arrays -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp"
+
+#Build the Source
+RUN	cd /tmp/milc/milc_qcd/ks_imp_rhmc && \
+	make su3_rhmd_hisq CC=mpicc CXX=mpic++ VERBOSE=1 V=1 && \
+	cp -r /tmp/milc/milc_qcd/ks_imp_rhmc/su3_rhmd_hisq /usr/local/milc/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   MILC_VERSION="MILC_QCD"
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+
+COPY	--from=milc /usr/local/milc/bin /usr/local/milc/bin
+COPY	/data/ /docker/run/
+COPY	/data/ /docker/src/data
+RUN     apt-get update -y && \
+        DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	wget && \
+        rm -rf /var/lib/apt/lists/*
+
+RUN     chown -R guest:guest /docker/run
+
+USER    guest
+ENV	PATH=/usr/local/milc/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
