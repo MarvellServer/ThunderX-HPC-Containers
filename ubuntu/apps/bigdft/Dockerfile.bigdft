@@ -24,39 +24,20 @@ RUN python2 -m pip install --upgrade setuptools
 RUN cd /tmp/bigdft/bigdft-suite && \
     sed -i "s/disable_Werror = True/disable_Werror = False/" bundler/jhbuild/defaults.jhbuildrc
 
-# patch - futile
-RUN cd /tmp/bigdft/bigdft-suite && \
-    cd futile && \
-    autoreconf -fi && \
-    sed -i "s/-lblas/-lopenblas/" configure && \
-    sed -i "s/-llapack/-lopenblas/" configure && \
-    sed -i "s/-lblas/-lopenblas/" configure && \
-    sed -i "s/-llapack/-lopenblas/" configure
-
-# patch - bigdft.modules
-RUN cd /tmp/bigdft/bigdft-suite && \
-    sed -i '116s/<!--//' bigdft.modules && \
-    sed -i '116s/-->//' bigdft.modules && \
-    sed -i '117s/^    /    <!--/' bigdft.modules && \
-    sed -i '117s/$/-->/' bigdft.modules
-
-# patch - bigdft
-RUN cd /tmp/bigdft/bigdft-suite && \
-    cd bigdft && \
-    autoreconf -fi && \
-    sed -i "s/-lblas/-lopenblas/" configure && \
-    sed -i "s/-llapack/-lopenblas/" configure && \
-    sed -i "s/-lblas/-lopenblas/" configure && \
-    sed -i "s/-llapack/-lopenblas/" configure
-
 # copy config file
 RUN mkdir -p /tmp/bigdft/bigdft-suite/build
 COPY data/thunderx2.rc /tmp/bigdft/bigdft-suite/build
 
 # set environment
+ENV CC=mpicc
+ENV F77=mpif77
+ENV FC=mpif90
+ENV CXX=mpic++
 ENV CFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
+ENV FFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
+ENV FCFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
 ENV CXXFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CXXFLAGS}"
-ENV FCFLAGS="-w -g -Ofast -funroll-loops -fpic -mcpu=thunderx2t99 -march=armv8.1-a+lse ${FCFLAGS}"
+ENV LDFLAGS="${LDFLAGS}"
 
 # build
 ENV JHBUILD_RUN_AS_ROOT=1

@@ -1,31 +1,60 @@
-#conditions.add("testing")
-#conditions.add("python")
+# BigDFT Installation Configuration file for Marvell ThunderX2 + RHEL 7.x + Docker
 
-# install directory
-prefix = '/usr/local'
+# Add the condition to run tests and include PyYAML
+conditions.add("testing")
 
-#build_policy = "all"
+# define prefix path
+prefix = "/usr/local"
 
-# List of modules to be built by default
-modules = ['yaml',]
+def get_prefix():
+  return prefix
 
-# Specific configure arguments for each module
-module_autogenargs['yaml'] = " "
+def get_lapath():
+  lapath = "/usr/local/lib"
+  return lapath
 
-module_autogenargs['futile'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+# List of modules this rc file will build
+modules = ['bigdft',]
 
-module_autogenargs['atlab'] = "FC=mpifort"
+# define environments
+def env_gcc():
+  import  os
+  CC = os.getenv('CC')
+  F77 = os.getenv('F77')
+  FC = os.getenv('FC')
+  CXX = os.getenv('CXX')
+  CFLAGS = os.getenv('CFLAGS')
+  FFLAGS = os.getenv('FFLAGS')
+  FCFLAGS = os.getenv('FCFLAGS')
+  CXXFLAGS = os.getenv('CXXFLAGS')
+  LDFLAGS = os.getenv('LDFLAGS')
+  return """ "CC=""" + str(CC) + """" "F77=""" + str(F77) + """" "FC=""" + str(FC) + """" "CXX=""" + str(CXX) + """" "CFLAGS=""" + str(CFLAGS) + """" "FFLAGS=""" + str(FFLAGS) + """" "FCFLAGS=""" + str(FCFLAGS) + """" "CXXFLAGS=""" + str(CXXFLAGS) + """" "LDFLAGS=""" + str(LDFLAGS) + """" """
 
-module_autogenargs['psolver'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+# configuration instructions for the modules
+module_autogenargs.update({
 
-module_autogenargs['chess'] = "FC=mpifort"
+  'libyaml' : env_gcc(),
 
-module_autogenargs['libxc'] = "CC=gcc --disable-shared"
+  'PyYAML': "build_ext -I" + get_prefix() + "/include -L" + get_prefix() + "/lib --rpath=" + get_prefix() + "/lib",
 
-module_autogenargs['libABINIT'] = "FC=mpifort"
+  'futile' : env_gcc() + " --with-ext-linalg='-lopenblas' --with-ext-linalg-path='-L" + get_lapath() + "' --enable-dynamic-libraries --with-pyyaml-path=" + get_prefix() + "/lib64/python2.7/site-packages",
 
-module_autogenargs['bigdft'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+  'atlab' : env_gcc() + " --enable-dynamic-libraries ",
 
-module_autogenargs['spred'] = "FC=mpifort --with-pyyaml-path=%(prefix)s/lib/python2.7/site-packages" % globals()
+  'psolver' : env_gcc() + " --with-ext-linalg='-lopenblas' --with-ext-linalg-path='-L" + get_lapath() + "' --enable-dynamic-libraries --with-pyyaml-path=" + get_prefix() + "/lib64/python2.7/site-packages",
 
-#module_autogenargs['PyYAML'] = "build --build-base /tmp/bigdft/bigdft-suite/build/PyYAML build_ext -I%(prefix)s/include -L%(prefix)s/lib --rpath=%(prefix)s/lib" % {"prefix": prefix}
+  'chess' : env_gcc() + " --with-ext-linalg='-lopenblas' --with-ext-linalg-path='-L" + get_lapath() + "' --enable-dynamic-libraries " + "--with-pyyaml-path=" + get_prefix() + "/lib64/python2.7/site-packages",
+
+  'libxc' : env_gcc() + " --enable-shared ",
+
+  'libABINIT' : env_gcc(),
+
+  'GaIn' : env_gcc(),
+
+  'PyBigDFT': "build_ext -I" + get_prefix() + "/include -L" + get_prefix() + "/lib --rpath=" + get_prefix() + "/lib",
+
+  'bigdft' : env_gcc() + " --with-ext-linalg='-lopenblas' --with-ext-linalg-path='-L" + get_lapath() + "' --enable-dynamic-libraries " + "--with-pyyaml-path="+get_prefix()+"/lib64/python2.7/site-packages",
+
+  'spred' : env_gcc() + " --with-ext-linalg='-lopenblas' --with-ext-linalg-path='-L" + get_lapath() + "' --enable-dynamic-libraries " + "--with-pyyaml-path="+get_prefix()+"/lib64/python2.7/site-packages",
+
+})
