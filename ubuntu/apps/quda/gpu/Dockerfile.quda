@@ -1,0 +1,94 @@
+###############################################################################
+# QUDA                                                                      #
+###############################################################################
+FROM    devel AS quda
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+
+
+#Create required directories
+RUN     mkdir -p /docker/run
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+   	hwloc libhwloc-dev bc && \
+   	rm -rf /var/lib/apt/lists/*
+
+#Download Source code
+RUN cd /tmp && \
+    git clone https://github.com/lattice/quda.git && \
+    cd quda && \
+    git fetch --all && \
+    git checkout v1.0.0
+
+# update environment
+ENV CFLAGS="-w -g -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CFLAGS}"
+ENV FFLAGS="-w -g -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse ${FFLAGS}"
+ENV FCFLAGS="-w -g -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse ${FCFLAGS}"
+ENV CXXFLAGS="-w -g -Ofast -funroll-loops -mcpu=thunderx2t99 -march=armv8.1-a+lse ${CXXFLAGS}"
+ENV LDFLAGS="${LDFLAGS}"
+
+# configure and build
+RUN cd /tmp/quda && \
+    mkdir build-v100 && \
+    cd build-v100 && \
+    cmake -DCMAKE_INSTALL_PREFIX=/usr/local/quda -DQUDA_DIRAC_WILSON=ON -DQUDA_DIRAC_CLOVER=ON -DQUDA_BUILD_SHAREDLIB=ON -DQUDA_MPI=ON -DBUILD_TESTING=OFF -DCMAKE_BUILD_TYPE=RELEASE -DQUDA_GPU_ARCH=sm_70 ../ && \
+    make -j64 && \
+    make install
+
+# install examples
+RUN mkdir -p /usr/local/quda/bin
+RUN /usr/bin/install /tmp/quda/build-v100/tests/blas_test                 /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/deflated_invert_test      /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/dslash_ctest              /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/dslash_test               /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/eigensolve_test           /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/hisq_stencil_test         /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/invert_test               /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/llfat_test                /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/pack_test                 /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/plaq_test                 /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/staggered_dslash_ctest    /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/staggered_dslash_test     /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/staggered_eigensolve_test /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/staggered_invert_test     /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/su3_test                  /usr/local/quda/bin/
+RUN /usr/bin/install /tmp/quda/build-v100/tests/unitarize_link_test       /usr/local/quda/bin/
+
+# add labels
+FROM    runtime
+LABEL   MAINTAINER="Srikanth Yalavarthi"
+LABEL   MAINTAINER_EMAIL="syalavarthi@marvell.com"
+LABEL   QUDA_VERSION="1.0.0"
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+   	hwloc bc && \
+   	rm -rf /var/lib/apt/lists/*
+
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY	--from=quda /usr/local/quda /usr/local/quda
+COPY	/data/ /docker/run/
+
+# Remove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  g++7 gcc-7 cpp-7 gcc g++ "*-dev*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  cuda-cufft-10-2 \
+	  cuda-curand-10-2 \
+	  cuda-cusolver-10-2 \
+	  cuda-cusparse-10-2 \
+	  cuda-npp-10-2 \
+	  cuda-nvgraph-10-2 \
+	  cuda-nvrtc-10-2 \
+	  cuda-libraries-10-2 \
+	  libcublas10 && \
+	rm -rf /var/lib/apt/lists/*
+
+ENV	PATH=/usr/local/quda/bin/:${PATH}
+ENV	LD_LIBRARY_PATH=/usr/local/quda/lib:${LD_LIBRARY_PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh

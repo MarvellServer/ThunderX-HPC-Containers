@@ -1,0 +1,3 @@
+APP_TYPE=hpc/gpu
+APP_NAME=quda
+COMPONENTS="devel_cuda10 ucx openmpi cmake runtime_cuda10"
