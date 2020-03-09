@@ -1,3 +1,4 @@
+bigdft
 cp2k
 gromacs/cpu
 gromacs/gpu
@@ -8,6 +9,7 @@ lammps/cpu
 lammps/gpu
 qmcpack/cpu
 qmcpack/gpu
+quda/gpu
 quicksilver
 snap
 specfem3d
