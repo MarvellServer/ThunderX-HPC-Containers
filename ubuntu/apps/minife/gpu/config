@@ -1,0 +1,3 @@
+APP_TYPE=hpc/gpu
+APP_NAME=minife
+COMPONENTS="devel_cuda10 ucx openmpi runtime_cuda10"

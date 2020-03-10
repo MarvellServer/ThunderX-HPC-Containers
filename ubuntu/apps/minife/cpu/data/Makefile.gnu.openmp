@@ -1,0 +1,32 @@
+#-----------------------------------------------------------------------
+# ATTENTION:
+#
+# This file does not enable MPI in the binary, this is just OpenMP
+# only. To enable MPI calls add -DHAVE_MPI to CPPFLAGS
+#
+#-----------------------------------------------------------------------
+
+MINIFE_TYPES =  \
+        -DMINIFE_SCALAR=double   \
+        -DMINIFE_LOCAL_ORDINAL=int      \
+        -DMINIFE_GLOBAL_ORDINAL=int
+
+MINIFE_MATRIX_TYPE = -DMINIFE_CSR_MATRIX
+# MINIFE_MATRIX_TYPE = -DMINIFE_ELL_MATRIX
+
+#-----------------------------------------------------------------------
+
+#ARMPL_DIR=/opt/arm/armpl-19.3.0_ThunderX2CN99_RHEL-7_arm-hpc-compiler_19.3_aarch64-linux
+CFLAGS = __CFLAGS__ #-L/opt/arm/arm-hpc-compiler-19.3_Generic-AArch64_RHEL-7_aarch64-linux/lib -L${ARMPL_DIR}/lib -larmpl_lp64 -lamath -lsimdmath -lastring -larmflang
+CXXFLAGS = $(CFLAGS) -DHAVE_MPI -DMPICH_IGNORE_CXX_SEEK
+
+CPPFLAGS = -I. -I../utils -I../fem $(MINIFE_TYPES) $(MINIFE_MATRIX_TYPE)
+#LDFLAGS=-L/opt/arm/arm-hpc-compiler-19.3_Generic-AArch64_RHEL-7_aarch64-linux/lib -L${ARMPL_DIR}/lib -larmpl_lp64 -lamath -lsimdmath -lastring -larmflang
+LIBS=
+
+CXX=mpic++
+CC=mpicc
+
+#-----------------------------------------------------------------------
+
+include make_targets

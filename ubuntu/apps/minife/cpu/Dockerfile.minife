@@ -1,0 +1,41 @@
+###############################################################################
+# MINIFE                                                                      #
+###############################################################################
+FROM    devel AS minife
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create required directories
+RUN     mkdir -p /docker/run && \
+	mkdir -p /usr/local/minife/bin
+
+#Download Source code
+RUN	mkdir -p /tmp/minife && \
+   	cd /tmp/minife && \
+	wget https://github.com/Mantevo/miniFE/archive/2.2.0.tar.gz && \
+	tar -zxvf 2.2.0.tar.gz
+
+#COPY Inputfile
+COPY	data/Makefile.gnu.openmp /tmp/minife/miniFE-2.2.0/openmp/src/Makefile
+
+RUN	cd /tmp/minife/miniFE-2.2.0/openmp/src && \
+	CFLAGS="-O3 -g -mcpu=thunderx2t99 -funroll-all-loops -fprefetch-loop-arrays -march=armv8.1-a+lse -ffast-math -fopenmp -flto" && \
+	sed -i "s/__CFLAGS__/$CFLAGS/g" Makefile && \
+	make && \
+	cp -r miniFE.x /usr/local/minife/bin/
+
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   LAMMPS_VERSION="minife-2.2.0"
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=minife /usr/local/minife/bin /usr/local/minife/bin
+
+COPY	/data/run.sh /docker/run/
+
+
+ENV	PATH=/usr/local/minife/bin/:${PATH}
+ENV	LD_LIBRARY_PATH=/usr/local/minife/lib:${LD_LIBRARY_PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
