@@ -1,0 +1,11 @@
+---------
+VMD NOTES
+---------
+The Docker run command expects the the optix installation directory on the
+host to be mapped to /docker/run/optix directory inside the container.
+
+Use docker run argument "-v /host/path/to/optix:/docker/run/optix" to make 
+this mapping.
+
+Eg:
+docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G --gpus all -v /host/path/to/optix:/docker/run/optix hpc/gpu/vmd:BUILD_VERSION

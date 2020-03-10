@@ -1,0 +1,86 @@
+###############################################################################
+# VMD                                                                         #
+###############################################################################
+FROM    devel AS vmd
+
+COPY --from=openmpi /usr/local /usr/local
+COPY --from=cmake /usr/local /usr/local
+COPY --from=hdf5 /usr/local /usr/local
+COPY --from=pnetcdf /usr/local /usr/local
+COPY --from=netcdf /usr/local /usr/local
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        tcl8.6-dev \
+        tk8.6-dev \
+        libtachyon-mt-0-dev \
+        libfltk1.3-dev \
+        mesa-common-dev \
+        libegl1-mesa-dev && \
+    rm -rf /var/lib/apt/lists/*
+#Create required directories
+
+RUN	mkdir -p /tmp/vmd && \
+	cd /tmp/vmd && \
+        wget https://www.ks.uiuc.edu/Research/vmd/vmd-1.9.4/files/alpha/vmd-1.9.4a38.src.tar.gz && \
+        tar -zxvf vmd-1.9.4a38.src.tar.gz
+
+COPY    data/Make-arch /tmp/vmd/plugins
+COPY    data/configure /tmp/vmd/vmd-1.9.4a38
+
+RUN     cd /tmp/vmd/plugins && \
+        make LINUXAARCH64 && \
+        PLUGINDIR=/tmp/vmd/vmd-1.9.4a38/plugins make distrib -j
+
+RUN     cd /tmp/vmd && \
+        wget http://plunk.org/~grantham/actc-1.1.tar.gz && \
+        tar -zxvf actc-1.1.tar.gz && \
+        cd actc-1.1 && \
+        make
+
+COPY    data/optix /tmp/vmd/optix
+
+ENV     OPTIX_HOME=/tmp/vmd/optix
+ENV     ACTC_HOME=/tmp/vmd/actc-1.1
+ENV     TCL_INCLUDE_DIR=/usr/include/tcl8.6
+ENV     TCL_LIBRARY_DIR=/usr/lib/tcl8.6
+ENV     LIBRARY_PATH=/usr/local/cuda/targets/sbsa-linux/lib
+
+RUN     cd /tmp/vmd/vmd-1.9.4a38 && \
+        ./configure LINUXAARCH64 OPENGL EGLPBUFFER FLTK TK IMD TCL PTHREADS CUDA ACTC LIBTACHYON SILENT LIBOPTIX && \
+        cd src && \
+        make -j && \
+        mv ../LINUXAARCH64/OptiXShaders.ptx ../shaders
+
+
+FROM    runtime
+LABEL   MAINTAINER="Ashwin Sekhar T K"
+LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
+LABEL   VMD_VERSION="vmd-1.9.4a38"
+
+COPY	--from=vmd /tmp/vmd/vmd-1.9.4a38 /usr/local/vmd
+RUN     mkdir -p /docker/run
+
+ENV     VMDDIR=/usr/local/vmd
+ENV     LD_LIBRARY_PATH=/docker/run/optix/lib64
+
+# Manually mark required packages and autoremove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
+
+RUN	apt-get update -y && \
+   	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	   libopengl0 \
+	   libegl1 \
+	   libtachyon-mt-0 \
+	   libtk8.6 \
+	   libfltk1.3 \
+           wget && \
+	DEBIAN_FRONTEND=noninteractive apt-get download libgl1 && \
+	DEBIAN_FRONTEND=noninteractive apt-get download libglx0 && \
+	dpkg -i --force-depends /*.deb && \
+	rm -rf /root/*deb && \
+   	rm -rf /var/lib/apt/lists/*
+
+ENV	PATH=/usr/local/vmd/LINUXAARCH64/:${PATH}

@@ -1,0 +1,3 @@
+APP_TYPE=hpc/gpu
+APP_NAME=vmd
+COMPONENTS="devel_cuda11 ucx openmpi cmake hdf5 pnetcdf netcdf runtime_cuda11"
