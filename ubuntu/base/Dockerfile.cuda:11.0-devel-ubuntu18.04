@@ -1,0 +1,50 @@
+###############################################################################
+# cuda:11.0-devel-ubuntu18.04                                                 #
+###############################################################################
+FROM ubuntu:18.04
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	wget \
+        ca-certificates \
+        gnupg1 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN  mkdir -p /tmp/cuda11
+COPY cuda-repo-ubuntu1804-11-0-local_11.0.0-2020.1.2.52-1_arm64.deb /tmp/cuda11
+
+RUN  cd /tmp/cuda11 && \
+     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin && \
+     mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
+     dpkg -i cuda-repo-ubuntu1804-11-0-local_11.0.0-2020.1.2.52-1_arm64.deb && \
+     apt-key add /var/cuda-repo-ubuntu1804-11-0-local/7fa2af80.pub
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      cuda-cudart-dev-11-0 \
+      cuda-compat-11-0 \
+      cuda-libraries-dev-11-0 \
+      cuda-nvml-dev-11-0 \
+      cuda-minimal-build-11-0 \
+      cuda-command-line-tools-11-0 \
+      cuda-compiler-11-0 \
+      cuda-nvcc-11-0 \
+      libcusolver-11-0 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN rm -rf /var/cuda-repo-ubuntu1804-11-0-local && \
+    rm /etc/apt/sources.list.d/cuda-ubuntu1804-11-0-local.list && \
+    rm -rf /tmp/cuda11
+
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+# Setup environment paths
+RUN ln -s /usr/local/cuda-11.0 /usr/local/cuda
+
+ENV PATH=/usr/local/cuda/bin:$PATH
+ENV LD_LIBRARY_PATH=/usr/local/cuda/targets/aarch64-linux/lib/:$LD_LIBRARY_PATH
+ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+

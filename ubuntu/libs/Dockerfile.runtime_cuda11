@@ -1,0 +1,46 @@
+###############################################################################
+# RUNTIME_CUDA11                                                              #
+###############################################################################
+FROM cuda:11.0-devel-ubuntu18.04 as runtime_cuda11
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        sudo \
+        openssh-client \
+        libgfortran5 \
+        libgomp1 \
+	libnuma1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Setup environment paths
+ENV PATH=/usr/local/cuda/bin:$PATH
+ENV LD_LIBRARY_PATH=/usr/local/cuda/targets/aarch64-linux/lib/:$LD_LIBRARY_PATH
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+ENV     PATH=/usr/local/bin:${PATH} \
+        LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH
+
+# Mark all the CUDA packages as auto installed. Unless a package is
+# later marked as manually installed in the application Dockerfiles
+# the package will get removed by an subsequent autoremove command.
+RUN	apt-get update -y && \
+	apt list --installed | grep 11-0 | awk -F "/" '{print $1}' | xargs apt-mark auto && \
+        rm -rf /var/lib/apt/lists/*
+
+# Remove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+	  gcc g++ cpp gcc-7 g++-7 cpp-7 \
+          "*dev-*" "*-dev*" && \
+	rm -rf /var/lib/apt/lists/*
+
+# Setup guest and give sudo permissions without password
+RUN     groupadd -r guest && \
+        useradd -r -g guest guest && \
+        usermod -aG sudo guest && \
+        sed -i '26d' /etc/sudoers && \
+        sed -i '26i\%sudo   ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers
+
+
+FROM runtime_cuda11 as runtime
+
