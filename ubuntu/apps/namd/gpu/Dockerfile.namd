@@ -66,6 +66,7 @@ RUN	apt-get update -y && \
    	rm -rf /var/lib/apt/lists/*
 
 COPY    ./data/run.sh /docker/run/run.sh
+COPY    ./data/run_imd.sh /docker/run/run_imd.sh
 
 ENV	PATH=/usr/local/namd/bin/:${PATH}
 ENTRYPOINT /bin/bash /docker/run/run.sh
