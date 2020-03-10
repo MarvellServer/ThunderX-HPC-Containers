@@ -18,6 +18,5 @@ RUN cd /tmp/boost/boost_1_72_0 &&    ./b2 -j28 \
 RUN cd /tmp/boost/boost_1_72_0 &&    ./b2 -j28 --prefix=/usr/local install
 
 RUN	apt-get update -y && \
-	DEBIAN_FRONTEND=noninteractive apt-get remove -y "*cuda*" "*dev-*" && \
 	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
 	rm -rf /var/lib/apt/lists/*

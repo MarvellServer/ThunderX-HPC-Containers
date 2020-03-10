@@ -14,3 +14,7 @@ RUN cd /tmp/cmake && \
     CFLAGS="${CFLAGS} -idirafter /usr/include/aarch64-linux-gnu" CXXFLAGS="${CFLAGS} -idirafter /usr/include/aarch64-linux-gnu" ../configure --prefix=/usr/local --parallel=64 && \
     make -j64 && \
     make install
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*

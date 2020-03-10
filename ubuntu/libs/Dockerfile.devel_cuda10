@@ -42,4 +42,14 @@ ENV     PATH=/usr/local/bin:${PATH} \
         LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LIBRARY_PATH \
 	CC=gcc CXX=g++ FC=gfortran
 
+# Mark all the CUDA packages as auto installed. Unless a package is
+# later marked as manually installed in the application Dockerfiles
+# the package will get removed by an subsequent autoremove command.
+RUN	apt-get update -y && \
+        apt list --installed | grep 10-2 | awk -F "/" '{print $1}' | xargs apt-mark auto && \
+	apt-mark auto \
+          libcublas-dev \
+          libcublas10 && \
+        rm -rf /var/lib/apt/lists/*
+
 FROM  devel_cuda10 as devel

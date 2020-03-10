@@ -16,6 +16,12 @@ RUN     groupadd -r guest && \
         sed -i '26d' /etc/sudoers && \
         sed -i '26i\%sudo   ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers
 
+# Remove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+          "*dev-*" "*-dev*" && \
+	rm -rf /var/lib/apt/lists/*
+
 # Setup environment paths
 ENV     PATH=/usr/local/bin:${PATH} \
         LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH
