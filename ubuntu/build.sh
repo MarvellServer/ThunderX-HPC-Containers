@@ -121,14 +121,6 @@ echo "USER    guest" >> Dockerfile
 
 
 ###############################################################################
-# Add the command to copy the Dockerfiles into the image
-###############################################################################
-# These files should be always copied to the image
-echo -e "\n# Copy the final dockerfile and data to the image" >> Dockerfile
-echo "COPY    . /docker/src" >> Dockerfile
-
-
-###############################################################################
 # Add build_version and docker name labels into the Dockerfile
 ###############################################################################
 echo -e "\n# Build version and name" >> Dockerfile
@@ -167,21 +159,50 @@ sed -i "s#BUILDDIR#/docker/src#g" prerequisites.sh
 
 
 ###############################################################################
+# Create the directory of sources that is to be copied into the image
+###############################################################################
+mkdir -p src
+cp docker_build.sh  Dockerfile  prerequisites.sh  README src
+
+# If data/DATA_FILES_TO_BE_COPIED exists, then copy only the files mentioned
+# in this file into the image
+if [ -f "data/DATA_FILES_TO_BE_COPIED" ]; then
+	mkdir -p src/data
+	cat data/DATA_FILES_TO_BE_COPIED | \
+		grep -v "^#" | \
+		xargs -n1 -I[] cp -r data/[] src/data/
+else
+	cp -r data src/data
+fi
+
+
+###############################################################################
+# Add the command to copy the Dockerfiles into the image
+# This Command will not be there in the Dockerfile inside the image
+###############################################################################
+echo -e "\n# Copy the final dockerfile and data to the image" >> Dockerfile
+echo "COPY    ./src /docker/src" >> Dockerfile
+
+
+###############################################################################
 # Start building
 ###############################################################################
-# Build the intermediate stages and tag them
 devel_version=`echo $COMPONENTS | awk '{print $1}' | awk -F_ '{print $2}'`
-for comp in $COMPONENTS; do
-	if [[ "$comp" == *"devel"* ]]; then
-		tag=$APP_TYPE/$comp:$BUILD_VERSION
-	elif [[ "$comp" == *"runtime"* ]]; then
-		tag=$APP_TYPE/$comp:$BUILD_VERSION
-	else
-		tag=$APP_TYPE/devel_${devel_version}/$comp:$BUILD_VERSION
-	fi
-	# Build the components one by one and name them
-	docker build --target $comp -t $tag .
-done
+
+if [ -z "$DONT_TAG_INTERMEDIATE_STAGES" ]; then
+	# Build the intermediate stages and tag them
+	for comp in $COMPONENTS; do
+		if [[ "$comp" == *"devel"* ]]; then
+			tag=$APP_TYPE/$comp:$BUILD_VERSION
+		elif [[ "$comp" == *"runtime"* ]]; then
+			tag=$APP_TYPE/$comp:$BUILD_VERSION
+		else
+			tag=$APP_TYPE/devel_${devel_version}/$comp:$BUILD_VERSION
+		fi
+		# Build the components one by one and name them
+		docker build --target $comp -t $tag .
+	done
+fi
 # Build the image which has the full build environment of the application
 docker build --target $APP_NAME -t $APP_TYPE/devel_${devel_version}/$APP_NAME:$BUILD_VERSION .
 # Build the app
