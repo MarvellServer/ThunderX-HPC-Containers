@@ -1,0 +1,38 @@
+###############################################################################
+# NETCDF                                                                      #
+###############################################################################
+FROM devel AS netcdf
+COPY --from=openmpi /usr/local /usr/local
+COPY --from=cmake /usr/local /usr/local
+COPY --from=hdf5 /usr/local /usr/local
+COPY --from=pnetcdf /usr/local /usr/local
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        zlib1g-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV   CC=mpicc
+ENV   CXX=mpicxx
+ENV   F77=mpif77
+ENV   FC=mpif90
+ENV   MPICC=mpicc
+ENV   MPIFC=mpif90
+ENV   MPICXX=mpicxx 
+
+RUN mkdir -p /tmp/netcdf && \
+    cd /tmp/netcdf && \
+    wget https://github.com/Unidata/netcdf-c/archive/v4.6.1.tar.gz && \
+    tar -zxvf v4.6.1.tar.gz && \
+    cd netcdf-c-4.6.1 && \
+    wget 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' -O config.guess && \
+    wget 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD' -O config.sub
+
+RUN cd /tmp/netcdf/netcdf-c-4.6.1 && \
+    ./configure --prefix=/usr/local --enable-pnetcdf --enable-parallel4 --enable-parallel-tests --enable-shared --enable-netcdf-4  --disable-dap --with-pic --disable-doxygen && \
+    make -j && \
+    make -j install
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
