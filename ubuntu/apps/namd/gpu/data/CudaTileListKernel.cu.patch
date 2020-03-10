@@ -1,0 +1,13 @@
+487a488,491
+> #if CUDA_VERSION >= 11000
+>     numJtiles  = cub::ShuffleIndex<CUB_PTX_WARP_THREADS>(numJtiles,  WARPSIZE-1, WARP_FULL_MASK);
+>     jtileStart = cub::ShuffleIndex<CUB_PTX_WARP_THREADS>(jtileStart, WARPSIZE-1, WARP_FULL_MASK);
+> #else
+489a494
+> #endif
+496a502,504
+> #if CUDA_VERSION >= 11000
+>     int jEnd   = cub::ShuffleDown<CUB_PTX_WARP_THREADS>(itileListPos, 1, WARPSIZE-1, WARP_FULL_MASK);
+> #else
+497a506
+> #endif
