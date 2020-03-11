@@ -1,0 +1,1 @@
+ docker run -v /home/pshukla/sj1git1-dev/dockerfiles/ubuntu/apps/specfem3d/gpu/OUTPUT_FILES:/docker/run/OUTPUT_FILES   -it  --gpus all --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G     hpc/gpu/specfem3d:2020.02-dev   

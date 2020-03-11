@@ -1,0 +1,93 @@
+###############################################################################
+# SPECFEM3D                                                                   #
+###############################################################################
+FROM    devel AS specfem3d
+
+COPY    --from=openmpi	 /usr/local 	/usr/local
+
+RUN	ldconfig 
+
+# Create necessary directories
+#RUN     mkdir -p /docker/run/ 		&&\
+#	mkdir -p /docker/run/DATA 	&&\
+#	mkdir -p /docker/run/bin  	
+         
+# Download source:
+RUN	mkdir -p /tmp/specfem3d && \ 
+	cd /tmp/specfem3d  && \
+	wget https://geodynamics.org/cig/software/specfem3d_globe/SPECFEM3D_GLOBE_V7.0.0.tar.gz	&& \
+	tar -xzvf SPECFEM3D_GLOBE_V7.0.0.tar.gz	&&\
+	wget https://images.nvidia.com/content/tesla/specfem3d-globe/parfiles.tar  &&\
+	tar -xvf parfiles.tar	&&\
+	cp DATA/* specfem3d_globe-7.0.0/DATA/.
+
+RUN	find / -name nvcc
+RUN	find / -name cuda
+RUN	echo $PATH
+
+RUN	export LDFLAGS="$(LDFLAGS) -L/usr/local/cuda/lib64  -lcudart -lstdc++"
+
+# configure:
+RUN	cd  /tmp/specfem3d/specfem3d_globe-7.0.0  && \
+	./configure --enable-vectorization  "FCFLAGS=  -std=gnu  -lstdc++ -lgfortran -O3" \
+	"CFLAGS=-O3"  "FCLINK=-lstdc++" \	
+	"LDFLAGS=-L/usr/local/cuda/lib64 -lcudart" \
+	--with-cuda   CUDA_INC=/usr/local/cuda/include  \
+	CUDA_LIB=/usr/local/cuda/lib64			 \
+	NVCC=nvcc			
+		
+# copy Makefile
+COPY	data/Makefile   	       /tmp/specfem3d/specfem3d_globe-7.0.0/
+COPY	data/go_mesher_solver_pbs.bash /tmp/specfem3d/specfem3d_globe-7.0.0/
+COPY 	data/run_this_example.sh       /tmp/specfem3d/specfem3d_globe-7.0.0/
+
+# To build for 1 GPU: use DATA/Par_file_96x96_100_1GPU as Par_file
+# To build for 2 GPU: use DATA/Par_file_96x96_100_2GPU as Par_file
+# Build SPECFEM3D:
+RUN	cd /tmp/specfem3d/specfem3d_globe-7.0.0/	&&\ 
+	cp DATA/Par_file_96x96_100_2GPU DATA/Par_file	&&\
+	mkdir -p DATABASES_MPI && mkdir -p OUTPUT_FILES &&\ 
+    	rm -rf DATABASES_MPI/* && rm -rf OUTPUT_FILES/* &&\
+	make clean &&\
+	make xmeshfem3D -j64 &&\
+	make xspecfem3D -j64 &&\ 
+	mkdir -p /usr/local/specfem3d  	
+
+FROM runtime
+LABEL   MAINTAINER="Parijat Shukla"
+LABEL   MAINTAINER_EMAIL="pshukla@marvell.com"
+LABEL	SPECFEM3D_VERSION="SPECFEM3D_GLOBE_V7.0.0"
+
+# Create necessary directoriesBEL
+RUN     mkdir -p /docker/run/          &&\
+	mkdir  /docker/run/DATA       &&\ 
+        mkdir  /docker/run/bin
+
+# Copy Dockerfile, run scripts and datasets
+COPY	data/run.sh 			/docker/run/
+COPY    data                    /docker/data
+
+COPY    --from=specfem3d /tmp/specfem3d/specfem3d_globe-7.0.0/bin       /usr/local/specfem3d/bin
+COPY    --from=specfem3d /tmp/specfem3d/specfem3d_globe-7.0.0/setup     /usr/local/specfem3d/setup
+
+# copy other auxillary files:
+COPY 	--from=specfem3d  /tmp/specfem3d/specfem3d_globe-7.0.0/DATA		/docker/run/DATA/.	
+
+
+RUN 	mkdir -p /docker/run/DATABASES_MPI	&& \
+	mkdir -p /docker/run/OUTPUT_FILES	&& \
+	cp /docker/run/DATA/Par_file 	/docker/run/OUTPUT_FILES/	&& \
+	cp /docker/run/DATA/STATIONS  	/docker/run/OUTPUT_FILES/	&& \
+	cp /docker/run/DATA/CMTSOLUTION /docker/run/OUTPUT_FILES/	
+
+COPY    --from=openmpi /usr/local /usr/local
+
+
+RUN     chown -R guest:guest /docker/run
+
+USER    root
+#USER    guest
+ENV     PATH=/usr/local/specfem3d/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+ 

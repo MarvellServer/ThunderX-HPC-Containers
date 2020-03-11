@@ -1,0 +1,12 @@
+-------------
+SPECFEM3D NOTES
+-------------
+
+Map the directory using the -v option of docker run command.
+Ensure that OUTPUT_FILES has write permissions.
+
+Eg: docker run -it -v /hostpath/OUTPUT_FILES:/docker/run/OUTPUT_FILES  -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/cpu/specfem3d:BUILD_VERSION
+
+
+Runtime of SPECFEM3d is in OUTPUT_FILES/output_solver.txt:
+tail -n 30 OUTPUT_FILES/output_solver.txt

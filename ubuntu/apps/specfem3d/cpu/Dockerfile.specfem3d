@@ -1,0 +1,106 @@
+###############################################################################
+# SPECFEM3D                                                                   #
+###############################################################################
+FROM    devel AS specfem3d
+
+COPY    --from=openmpi	 /usr/local 	/usr/local
+
+#RUN	ldconfig 
+
+#RUN	apt-get update &&\
+#	apt install gawk -y &&\
+#	apt install bison -y
+
+#RUN	echo $PATH
+#RUN	find / -name gawk
+#RUN	find / -name bison	
+#
+#RUN	apt install python3 -y
+
+RUN	ldd --version
+
+         
+# Download source:
+RUN	mkdir /tmp/specfem3d && \ 
+	cd /tmp/specfem3d  && \
+	wget https://geodynamics.org/cig/software/specfem3d_globe/SPECFEM3D_GLOBE_V7.0.0.tar.gz	&& \
+	tar -xzvf SPECFEM3D_GLOBE_V7.0.0.tar.gz	&&\
+	wget https://images.nvidia.com/content/tesla/specfem3d-globe/parfiles.tar  &&\
+	tar -xvf parfiles.tar	&&\
+	cp DATA/* specfem3d_globe-7.0.0/DATA/.
+
+ENV	gfortran=/opt/gcc-9.2.0-glibc-2.30/bin/gfortran
+
+RUN     cd  /tmp/specfem3d/specfem3d_globe-7.0.0  && \ 
+	./configure --enable-vectorization
+
+		
+# copy Makefile
+COPY	data/Makefile   	       /tmp/specfem3d/specfem3d_globe-7.0.0/
+
+RUN     sed -i "s#__FCFLAGS__#$CFLAGS#g" /tmp/specfem3d/specfem3d_globe-7.0.0/Makefile
+RUN     sed -i "s#__CFLAGS__#$FCFLAGS#g" /tmp/specfem3d/specfem3d_globe-7.0.0/Makefile
+RUN     sed -i "s#__CPPFLAGS__#$CFLAGS#g" /tmp/specfem3d/specfem3d_globe-7.0.0/Makefile
+RUN     sed -i "s#__LDFLAGS__#$LDFLAGS#g" /tmp/specfem3d/specfem3d_globe-7.0.0/Makefile
+COPY	data/go_mesher_solver_pbs.bash /tmp/specfem3d/specfem3d_globe-7.0.0/
+#COPY 	data/run_this_example.sh       /tmp/specfem3d/specfem3d_globe-7.0.0/
+
+# To build for 1 GPU: use DATA/Par_file_96x96_100_1GPU as Par_file
+# To build for 2 GPU: use DATA/Par_file_96x96_100_2GPU as Par_file
+# Build SPECFEM3D:
+RUN	cd /tmp/specfem3d/specfem3d_globe-7.0.0/	&&\ 
+	cp DATA/Par_file_96x96_100_36CPU DATA/Par_file	&&\
+	mkdir -p DATABASES_MPI && mkdir -p OUTPUT_FILES &&\ 
+    	rm -rf DATABASES_MPI/* 	&&\
+	rm -rf OUTPUT_FILES/*   &&\
+	make clean 		&&\
+	make xmeshfem3D -j64 &&\
+	make xspecfem3D -j64 &&\ 
+	mkdir -p /usr/local/specfem3d 	&&\
+	cp -r /tmp/specfem3d/specfem3d_globe-7.0.0/bin       /usr/local/specfem3d/bin &&\
+	cp -r /tmp/specfem3d/specfem3d_globe-7.0.0/setup     /usr/local/specfem3d/setup &&\
+	cp -r /tmp/specfem3d/specfem3d_globe-7.0.0/DATA     /usr/local/specfem3d/DATA   &&\
+	rm -rf /tmp/specfem3d 	
+
+FROM runtime
+LABEL   MAINTAINER="Parijat Shukla"
+LABEL   MAINTAINER_EMAIL="pshukla@marvell.com"
+LABEL	SPECFEM3D_VERSION="SPECFEM3D_GLOBE_V7.0.0"
+
+# Create necessary directoriesBEL
+RUN     mkdir -p /docker/run/          &&\
+	mkdir  /docker/run/DATA       &&\ 
+        mkdir  /docker/run/bin
+
+# Copy Dockerfile, run scripts and datasets
+COPY	data/run.sh 		/docker/run/
+COPY    data                    /docker/data
+
+#COPY    --from=specfem3d /tmp/specfem3d/specfem3d_globe-7.0.0/bin       /usr/local/specfem3d/bin
+COPY    --from=specfem3d /usr/local/specfem3d/bin        /usr/local/specfem3d/bin
+#COPY    --from=specfem3d /tmp/specfem3d/specfem3d_globe-7.0.0/bin       /usr/local/specfem3d/bin
+COPY    --from=specfem3d /usr/local/specfem3d/setup     /usr/local/specfem3d/setup
+
+# copy other auxillary files:
+#COPY 	--from=specfem3d  /tmp/specfem3d/specfem3d_globe-7.0.0/DATA		/docker/run/DATA/.	
+COPY 	--from=specfem3d  /usr/local/specfem3d/DATA		/docker/run/DATA/	
+
+
+RUN 	mkdir /docker/run/DATABASES_MPI	&& \
+	mkdir /docker/run/OUTPUT_FILES	&& \
+	cp /docker/run/DATA/Par_file 	/docker/run/OUTPUT_FILES/	&& \
+	cp /docker/run/DATA/STATIONS  	/docker/run/OUTPUT_FILES/	&& \
+	cp /docker/run/DATA/CMTSOLUTION /docker/run/OUTPUT_FILES/	
+
+COPY    --from=openmpi /usr/local /usr/local
+
+
+#RUN     chown -R guest:guest /docker/run
+
+USER    root
+#USER    guest
+ENV     PATH=/usr/local/specfem3d/bin/:${PATH}
+
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+ 
