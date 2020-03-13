@@ -1,0 +1,31 @@
+###############################################################################
+# RUNTIME_CUDA11                                                              #
+###############################################################################
+FROM cuda:11.0-devel-centos8.1.1911 as runtime_cuda11
+
+# update environment
+ENV PATH /usr/local/cuda/bin:${PATH}
+ENV PATH /usr/local/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/local/cuda/targets/aarch64-linux/lib/:${LD_LIBRARY_PATH}
+ENV LD_LIBRARY_PATH /usr/local/lib:/usr/local/lib64:${LD_LIBRARY_PATH}
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+# install additional packages
+RUN dnf makecache
+RUN dnf -y install \
+      openssh-clients \
+      sudo
+
+# clean up
+RUN dnf -y remove *-devel
+RUN dnf -y autoremove
+RUN dnf clean all
+
+# Setup guest and give sudo permissions without password
+RUN     groupadd -r guest && \
+        useradd -r -g guest guest && \
+        usermod -aG wheel guest && \
+        sed -i 's/^# %wheel/%wheel/' /etc/sudoers
+
+FROM runtime_cuda11 as runtime

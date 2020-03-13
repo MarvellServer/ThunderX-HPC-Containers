@@ -5,8 +5,6 @@ FROM centos:8.1.1911
 
 # install epel repository
 RUN dnf makecache
-# RUN dnf -y update # skip
-RUN dnf -y install wget 
 
 # get cuda11 rpm file
 RUN mkdir -p /tmp/cuda11
@@ -14,7 +12,7 @@ COPY cuda-repo-rhel8-11-0-local-11.0.0_2020.1.2.52-1.aarch64.rpm /tmp/cuda11
 
 # install cuda11 repository
 RUN cd /tmp/cuda11 && \
-    dnf -y install ./cuda-repo-rhel8-11-0-local-11.0.0_2020.1.2.52-1.aarch64.rpm
+    rpm -ivh cuda-repo-rhel8-11-0-local-11.0.0_2020.1.2.52-1.aarch64.rpm
 
 # install cuda11
 RUN dnf -y makecache && \
@@ -29,17 +27,11 @@ RUN dnf -y makecache && \
       libcusolver-11-0 \
       cuda-toolkit-11-0
 
-# cleanup
-RUN rm -rf /var/cuda-repo-rhel8-11-0-local && \
-    rm -rf /etc/yum.repos.d/cuda-rhel8-11-0-local.repo && \
-    rm -rf /tmp/cuda11
-RUN dnf clean all
+# update ld.so.conf - skip redundant operations
+# RUN echo "/usr/local/cuda-11.0/targets/sbsa-linux/lib" > /etc/ld.so.conf.d/cuda-11-0.conf
 
-# update ld.so.conf # skip not needed
-#RUN echo "/usr/local/cuda-11.0/targets/sbsa-linux/lib" > /etc/ld.so.conf.d/cuda-11-0.conf
-
-# create soft links # skip not needed
-#RUN ln -s /usr/local/cuda-11.0 /usr/local/cuda
+# create soft links - skip redundant operations
+# RUN ln -s /usr/local/cuda-11.0 /usr/local/cuda
 
 # update environment
 ENV PATH=/usr/local/cuda/bin:$PATH
@@ -47,3 +39,12 @@ ENV LD_LIBRARY_PATH=/usr/local/cuda/targets/sbsa-linux/lib:$LD_LIBRARY_PATH
 ENV LIBRARY_PATH /usr/local/cuda/lib64/stubs
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+# update the image
+RUN dnf -y update
+
+# clean up
+RUN rpm -e cuda-repo-rhel8-11-0-local-11.0.0_2020.1.2.52-1.aarch64
+RUN rm -rf /tmp/cuda11
+RUN dnf -y autoremove
+RUN dnf -y clean all

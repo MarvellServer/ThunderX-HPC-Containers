@@ -1,0 +1,8 @@
+
+README file for CentOS-8 base images
+
+To build the Image:
+docker build -t cuda:11.0-devel-centos8.1.1911 -f  'Dockerfile.cuda:11.0-devel-centos8.1.1911' ./
+
+Squash the images for size reduction:
+docker-squash -t cuda:11.0-devel-centos8.1.1911 cuda:11.0-devel-centos8.1.1911 --verbose

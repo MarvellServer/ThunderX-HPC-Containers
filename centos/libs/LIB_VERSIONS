@@ -1,0 +1,6 @@
+devel_cuda11    11.0-devel-centos8.1.1911,gcc-8.3.0
+runtime_cuda11  11.0-devel-centos8.1.1911,gcc-8.3.0
+cmake		3.16.3
+openmpi		4.0.2
+ucx		1.6.0
+ffmpeg 3.4.7

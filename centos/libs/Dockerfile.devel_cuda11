@@ -1,0 +1,55 @@
+###############################################################################
+# DEVEL_CUDA11                                                                #
+###############################################################################
+FROM cuda:11.0-devel-centos8.1.1911 as devel_cuda11
+
+# install development packages
+RUN dnf -y makecache
+RUN dnf -y install \
+      automake \
+      autoconf \
+      libtool \
+      m4 \
+      gcc \
+      gcc-c++ \
+      gcc-gfortran \
+      patch \
+      patchutils \
+      diffutils \
+      python2-devel \
+      python3-devel \
+      hwloc \
+      openssl-devel \
+      numactl \
+      numactl-devel \
+      openssh-clients \
+      git \
+      subversion \
+      wget
+
+# update alternatives
+RUN alternatives --set python /usr/bin/python3
+RUN update-alternatives --install /usr/bin/pydoc          pydoc         /usr/bin/pydoc3         10
+RUN update-alternatives --install /usr/bin/python-config  python-config /usr/bin/python3-config 10
+RUN update-alternatives --install /usr/bin/pip            pip           /usr/bin/pip3           10
+
+# update cuda environment
+ENV PATH=/usr/local/cuda/bin:${PATH}
+ENV LD_LIBRARY_PATH=/usr/local/cuda/targets/sbsa-linux/lib/:${LD_LIBRARY_PATH}
+ENV NVIDIA_VISIBLE_DEVICES all
+ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
+
+# update system environment
+ENV PATH=/usr/local/bin:${PATH}
+ENV LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:${LD_LIBRARY_PATH}
+ENV LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:${LIBRARY_PATH}
+ENV CPATH=/usr/local/include:${CPATH}
+ENV CC=gcc
+ENV CXX=g++
+ENV FC=gfortran
+
+# cleanup
+RUN dnf autoremove -y
+RUN dnf clean all
+
+FROM  devel_cuda11 as devel

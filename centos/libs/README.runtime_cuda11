@@ -1,0 +1,6 @@
+----------
+CUDA NOTES
+----------
+In order to support the "--gpus all" in Docker, you need to have the
+nvidia-docker runtime plugin installed in your system. Refer Nvidia
+documentation for installing the same.

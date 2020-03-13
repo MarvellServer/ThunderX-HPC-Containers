@@ -1,0 +1,24 @@
+###############################################################################
+# UCX                                                                         #
+###############################################################################
+
+FROM devel AS ucx
+
+# fetch source
+RUN mkdir -p /tmp/ucx && \
+    cd /tmp/ucx && \
+    git clone https://github.com/openucx/ucx.git && \
+    cd ucx && \
+    git checkout v1.6.0 && \
+    ./autogen.sh
+
+# configure, build and install
+RUN cd /tmp/ucx/ucx && \
+    ./configure --prefix=/usr/local --disable-doxygen-doc --without-knem --with-cuda=/usr/local/cuda && \
+    make -j64 && \
+    make -j64 install
+
+# clean up
+RUN rm -rf /tmp/ucx && \
+    dnf -y autoremove && \
+    dnf clean all

@@ -1,0 +1,24 @@
+###############################################################################
+# OPENMPI                                                                     #
+###############################################################################
+FROM devel AS openmpi
+
+# copy dependencies
+COPY --from=ucx /usr/local /usr/local
+
+# fetch source
+RUN mkdir -p /tmp/openmpi && \
+    cd /tmp/openmpi && \
+    wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.2.tar.gz && \
+    tar -zxf openmpi-4.0.2.tar.gz
+
+# configure build and install
+RUN cd /tmp/openmpi/openmpi-4.0.2 && \
+    ./configure --prefix=/usr/local --enable-mpi-cxx --with-cma --enable-mpirun-prefix-by-default --enable-mpi1-compatibility --with-ucx=/usr/local --with-cuda=/usr/local/cuda --disable-oshmem && \
+    make -j64 && \
+    make -j64 install
+
+# clean up
+RUN rm -rf /tmp/openmpi && \
+    dnf -y autoremove && \
+    dnf clean all
