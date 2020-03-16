@@ -1,0 +1,6 @@
+------------
+ParaView NOTES
+------------
+Run the following command to run the docker
+docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G --gpus all hpc/gpu/paraview:BUILD_VERSION
+

@@ -1,0 +1,3 @@
+APP_TYPE=hpc/gpu
+APP_NAME=paraview
+COMPONENTS="devel_cuda11 ucx openmpi cmake ffmpeg runtime_cuda11"

@@ -1,0 +1,27 @@
+###############################################################################
+# FFMPEG                                                                       #
+###############################################################################
+
+FROM devel AS ffmpeg
+
+#install dependencies
+RUN dnf -y --enablerepo PowerTools install ocl-icd \
+      ocl-icd-devel \
+      mesa-libGL-devel
+
+# fetch source
+RUN cd /tmp && \
+    wget https://github.com/FFmpeg/FFmpeg/archive/n3.4.7.tar.gz && \
+    tar -xzf n3.4.7.tar.gz
+
+# configure, build and install
+RUN cd /tmp/FFmpeg-n3.4.7 && \
+    mkdir build && cd build && \
+    ../configure --prefix=/usr/local --enable-opengl --enable-opencl  --enable-avresample --enable-shared && \
+    make -j64 && \
+    make -j64 install
+
+# clean up
+RUN rm -rf /tmp/FFmpeg-n3.4.7 && \
+    dnf -y autoremove && \
+    dnf clean all
