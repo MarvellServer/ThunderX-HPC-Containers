@@ -29,7 +29,25 @@ RUN apt-get update -y && \
       cuda-command-line-tools-11-0 \
       cuda-compiler-11-0 \
       cuda-nvcc-11-0 \
+      libnvidia-compute-445 \
+      libnvidia-decode-445 \
+      libnvidia-encode-445 \
       libcusolver-11-0 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install libnvidia-gl-445
+# Make sure that libglx-mesa0 is not installed by removing the dependency
+# between libglx0 and libglx-mesa0.
+# libglx-mesa0 causes many unnecessary libraries to get installed. 
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       libglvnd0 libx11-6 && \
+    apt download libglx0 && \
+    dpkg -i --force-depends libglx0_1.0.0-2ubuntu2.3_arm64.deb && \
+    rm libglx0_1.0.0-2ubuntu2.3_arm64.deb && \
+    sed -i '/Depends/s/, libglx-mesa0//g' /var/lib/dpkg/status && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+       libnvidia-gl-445 && \
     rm -rf /var/lib/apt/lists/*
 
 RUN rm -rf /var/cuda-repo-ubuntu1804-11-0-local && \
