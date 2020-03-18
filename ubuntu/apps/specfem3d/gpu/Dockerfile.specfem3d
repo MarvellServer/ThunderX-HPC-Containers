@@ -82,6 +82,10 @@ RUN 	mkdir -p /docker/run/DATABASES_MPI	&& \
 
 COPY    --from=openmpi /usr/local /usr/local
 
+RUN     apt-get update -y && \
+        apt-mark manual *cudart* && \
+        DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+        rm -rf /var/lib/apt/lists/*
 
 RUN     chown -R guest:guest /docker/run
 

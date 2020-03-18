@@ -13,7 +13,6 @@ RUN     mkdir -p /docker/run && \
 	mkdir -p /docker/src && \
 	mkdir -p /usr/local/milc/bin
 
-#Install required libraries
 
 #QMP
 RUN mkdir -p /tmp/milc && cd /tmp/milc && \
@@ -96,6 +95,12 @@ COPY	/data/ /docker/src/data
 RUN     apt-get update -y && \
         DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         wget && \
+        rm -rf /var/lib/apt/lists/*
+
+#Remove unnecessary package
+RUN     apt-get update -y && \
+	apt-mark manual *cudart* && \
+        DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
         rm -rf /var/lib/apt/lists/*
 
 RUN     chown -R guest:guest /docker/run

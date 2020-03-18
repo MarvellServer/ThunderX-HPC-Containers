@@ -103,7 +103,7 @@ CUDA_PLUS = yes
 
 CUDA_FLAGS = 
 CUDA_INC = -I/usr/local/cuda/include
-CUDA_LINK = -L/usr/local/cuda/targets/aarch64-linux/lib -lcudart -lstdc++
+CUDA_LINK = -L/usr/local/cuda/lib64 -lcudart -lstdc++
 CUDA_DEBUG = --cudart=shared
 
 NVCC = nvcc

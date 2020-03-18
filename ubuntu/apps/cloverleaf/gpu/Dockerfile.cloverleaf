@@ -38,20 +38,12 @@ COPY    --from=cloverleaf /tmp/cloverleaf/CloverLeaf_CUDA/InputDecks/ /docker/ru
 
 # Remove unnecessary packages
 RUN	apt-get update -y && \
-	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
-	  g++7 gcc-7 cpp-7 gcc g++ "*-dev*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y && \
+        apt-mark manual *cudart* && \ 
 	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
-	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
-	  cuda-cufft-10-2 \
-	  cuda-curand-10-2 \
-	  cuda-cusolver-10-2 \
-	  cuda-cusparse-10-2 \
-	  cuda-npp-10-2 \
-	  cuda-nvgraph-10-2 \
-	  cuda-nvrtc-10-2 \
-	  cuda-libraries-10-2 \
-	  libcublas10 && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y && \
 	rm -rf /var/lib/apt/lists/*
+
 
 COPY   data/run.sh /docker/run/run.sh
 ENTRYPOINT sh "/docker/run/run.sh"

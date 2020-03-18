@@ -107,7 +107,7 @@ libdir.i686   = lib
 libdir.aarch64   = lib64
 MACHINE := $(shell uname -m)
 libdir = $(libdir.$(MACHINE))
-LDFLAGS+=-L$(CUDA_HOME)/targets/aarch64-linux/lib/
+LDFLAGS+=-L$(CUDA_HOME)/lib64
 
 ifdef DEBUG
 NV_FLAGS+=-O0 -g -G

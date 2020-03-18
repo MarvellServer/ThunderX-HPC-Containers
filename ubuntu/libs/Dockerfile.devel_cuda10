@@ -34,6 +34,7 @@ RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
 # Setup environment paths
 ENV PATH=/usr/local/cuda-10.2/bin:$PATH
 ENV LD_LIBRARY_PATH=/usr/local/cuda-10.2/targets/aarch64-linux/lib/:$LD_LIBRARY_PATH
+ENV LIBRARY_PATH=$LIBRARY_PATH:/usr/local/cuda/targets/aarch64-linux/lib/stubs/:/usr/local/cuda/targets/aarch64-linux/lib
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 

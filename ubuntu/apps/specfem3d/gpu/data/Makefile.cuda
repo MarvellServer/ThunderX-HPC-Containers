@@ -103,8 +103,8 @@ CUDA_PLUS = yes
 # runtime library -lcudart needed, others are optional -lcuda -lcublas
 
 CUDA_FLAGS = 
-CUDA_INC = -I/usr/local/cuda-10.2/include
-CUDA_LINK = -L/usr/local/cuda-10.2/targets/aarch64-linux/lib -lcudart -lstdc++
+CUDA_INC = -I/usr/local/cuda/include
+CUDA_LINK = -L/usr/local/cuda/lib64 -lcudart -lstdc++
 CUDA_DEBUG = --cudart=shared
 
 NVCC = nvcc

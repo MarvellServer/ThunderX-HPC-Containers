@@ -40,7 +40,7 @@ RUN     mkdir -p /tmp/qmcpack/qmcpack-3.7.0/build && \
 		-DENABLE_TIMERS=1 \
 		-DENABLE_SOA=1 \
 		-DBLAS_LIBRARIES=/usr/local/lib/libopenblas.so \
-		-DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda-10.2 \
+		-DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
 		-DLAPACK_LIBRARIES=/usr/local/lib/libopenblas.so \
 		-DFFTW_LIBRARIES=/usr/local/lib/libfftw3.so \
 		-DFFTW_HOME=/usr/local \
@@ -76,17 +76,9 @@ COPY    ./data/NiO-fcc-S32-dmc.xml /docker/run
 
 # Remove unnecessary packages
 RUN	apt-get update -y && \
-	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
-	  g++7 gcc-7 cpp-7 gcc g++ "*-dev*" && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y && \
+	 apt-mark manual *cublas* && \	
 	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
-	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
-	  cuda-curand-10-2 \
-	  cuda-cusolver-10-2 \
-	  cuda-cusparse-10-2 \
-	  cuda-npp-10-2 \
-	  cuda-nvgraph-10-2 \
-	  cuda-nvrtc-10-2 \
-	  cuda-libraries-10-2 && \
 	rm -rf /var/lib/apt/lists/*
 
 ENV	PATH=/usr/local/qmcpack/bin/:${PATH}

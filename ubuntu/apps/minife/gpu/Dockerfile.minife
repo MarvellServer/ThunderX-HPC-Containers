@@ -35,6 +35,11 @@ COPY    --from=minife /usr/local/minife/bin /usr/local/minife/bin
 
 COPY	/data/run.sh /docker/run/
 
+#Remove unnecessary packages
+RUN     apt-get update -y && \
+	apt-mark manual *nvtx* && \
+        DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+        rm -rf /var/lib/apt/lists/*
 
 ENV	PATH=/usr/local/minife/bin/:${PATH}
 ENV	LD_LIBRARY_PATH=/usr/local/minife/lib:${LD_LIBRARY_PATH}

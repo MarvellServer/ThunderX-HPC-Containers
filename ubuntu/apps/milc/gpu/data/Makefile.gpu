@@ -426,7 +426,7 @@ ifeq ($(strip ${WANTQUDA}),true)
   CUDA_HOME ?= /usr/local/cuda
   INCQUDA += -I${CUDA_HOME}/include
   PACKAGE_HEADERS += ${CUDA_HOME}/include
-  LIBQUDA += -L/usr/local/cuda-10.2/targets/aarch64-linux/lib/stubs/ -L/usr/local/cuda-10.2/targets/aarch64-linux/lib -lcudart -lcuda
+  LIBQUDA += -L/usr/local/cuda/lib64 -lcudart -lcuda
   QUDA_HEADERS = ${QUDA_HOME}/include
 
 # Definitions of compiler macros -- don't change.  Could go into a Make_template_QUDA
