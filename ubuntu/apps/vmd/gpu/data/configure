@@ -164,7 +164,7 @@ if (!(-e "plugins")) {
 
 #################### Parse command line options   ###########
 # list of allowed architectures
-@archlist=('AIX6_64', 'ANDROIDARMV7A', 'BLUEGENEQ', 'BLUEWATERS', 'CRAY_XC', 'CRAY_XK', 'FREEBSD', 'FREEBSDAMD64', 'LINUX', 'LINUXAARCH64', 'LINUXAMD64', 'LINUXCARMA', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'OPENPOWER', 'SUMMIT', 'SUMMITDEV', 'SOLARIS2', 'SOLARIS2_64', 'SOLARISX86', 'SOLARISX86_64', 'WIN32', 'WIN64');
+@archlist=('AIX6_64', 'ANDROIDARMV7A', 'BLUEGENEQ', 'BLUEWATERS', 'CRAY_XC', 'CRAY_XK', 'FREEBSD', 'FREEBSDAMD64', 'LINUX', 'LINUXARM64', 'LINUXAMD64', 'LINUXCARMA', 'LINUXPPC64', 'MACOSX', 'MACOSXX86', 'MACOSXX86_64', 'OPENPOWER', 'SUMMIT', 'SUMMITDEV', 'SOLARIS2', 'SOLARIS2_64', 'SOLARISX86', 'SOLARISX86_64', 'WIN32', 'WIN64');
 
 if ($#ARGV == -1) {
     $text = `cat configure.options`;
@@ -420,7 +420,7 @@ $def_title="ON";
 $def_imageviewer="display %s";
 
 # program version number
-$progversion="1.9.4a38";
+$progversion="1.9.4a39";
 
 # text prompt string
 $promptstring="vmd > ";
@@ -494,7 +494,6 @@ $arch_nvccflags   = "-lineinfo --ptxas-options=-v " .
                     "-gencode arch=compute_60,code=sm_60 " .
                     "-gencode arch=compute_70,code=compute_70 " .
                     "-gencode arch=compute_70,code=sm_70 " .
-                    "-gencode arch=compute_75,code=sm_75 " .
                     "--ftz=true ";
 $arch_gcc         = "gcc";
 $arch_gccpp       = "g++";
@@ -767,8 +766,8 @@ $tcl_include      = "-I$stock_tcl_include_dir";
 if ($config_tk) { $tcl_include .= " -I$stock_tk_include_dir"; }
 $tcl_library      = "-L$stock_tcl_library_dir";
 if ($config_tk) { $tcl_library .= " -L$stock_tk_library_dir"; }
-$tcl_libs         = "-ltcl8.6";  
-if ($config_tk) { $tcl_libs = "-ltk8.6 -lX11 " . $tcl_libs; }
+$tcl_libs         = "-ltcl8.5";  
+if ($config_tk) { $tcl_libs = "-ltk8.5 -lX11 " . $tcl_libs; }
 
 @tcl_cc           = ();
 @tcl_cu           = ();
@@ -1034,8 +1033,7 @@ $nvenc_libs        = "-lcuda"; # XXX need to eliminate via dlopen()/dlsym()
 #   This option enables high performance remote visualization
 #######################
 $nvpipe_defines     = "-DVMDNVPIPE ";
-$nvpipe_dir         = "/home/johns/graphics/nvpipe/nvpipe.2018/NvPipe/c6build";
-#$nvpipe_dir         = "/ccs/home/stonej1/nvpipe/NvPipe/build";
+$nvpipe_dir         = "/usr/local";
 $nvpipe_include     = "-I$nvpipe_dir/include";
 $nvpipe_library     = "-L$nvpipe_dir -lNvPipe -lnvcuvid";
 $nvpipe_libs        = "-lcuda"; # XXX need to eliminate via dlopen()/dlsym()
@@ -1695,7 +1693,6 @@ $vmd_libs          = "$tcl_libs";
 		   'VMDMenu.C',
 	  	   'VMDQuat.C',
 		   'VMDTitle.C', 
-		   'VMDThreads.C',
                    'VolCPotential.C',
 		   'VolMapCreate.C',
 		   'VolMapCreateILS.C',
@@ -1851,7 +1848,6 @@ $vmd_libs          = "$tcl_libs";
 	      'VMDMenu.h',
 	      'VMDQuat.h',
 	      'VMDTitle.h', 
-	      'VMDThreads.h',
               'VolCPotential.h',
 	      'VolMapCreate.h',
               'VolumetricData.h',
@@ -2309,7 +2305,7 @@ if ($config_arch eq "LINUX") {
     $arch_lopts .= " -Xlinker -export-dynamic";
 }
 
-if ($config_arch eq "LINUXAARCH64") {
+if ($config_arch eq "LINUXARM64") {
     $def_imageviewer="display %s";
 
       # for compiling with g++:
@@ -2328,7 +2324,7 @@ if ($config_arch eq "LINUXAARCH64") {
 
     if ($config_cuda) {
       $arch_nvccflags   .= " -O3 $cuda_include";
-      $cuda_library     = "-L/usr/local/cuda-10.2/lib64";
+      $cuda_library     = "-L/usr/local/cuda/lib64";
     }
 
     $arch_lex		= "flex"; # has problems with vendor lex
@@ -2460,8 +2456,8 @@ if ($config_arch eq "LINUXAMD64") {
 
 if ($config_arch eq "LINUXCARMA") {
   # Tcl 8.6.0 is reliable on CARMA, 8.5.x is not...
-  $tcl_libs         = "-ltcl8.6";  
-  if ($config_tk) { $tcl_libs = "-ltk8.6 -lX11 " . $tcl_libs; }
+  $tcl_libs         = "-ltcl8.5";  
+  if ($config_tk) { $tcl_libs = "-ltk8.5 -lX11 " . $tcl_libs; }
   $vmd_libs          = "$tcl_libs -lz";
 
   $arch_nvcc     = "/usr/local/cuda-5.5/bin/nvcc";

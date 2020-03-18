@@ -11,26 +11,30 @@ COPY --from=netcdf /usr/local /usr/local
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        tcl8.6-dev \
-        tk8.6-dev \
+        tcl8.5-dev \
+        tk8.5-dev \
         libtachyon-mt-0-dev \
         libfltk1.3-dev \
         mesa-common-dev \
         libegl1-mesa-dev && \
     rm -rf /var/lib/apt/lists/*
-#Create required directories
 
-RUN	mkdir -p /tmp/vmd && \
-	cd /tmp/vmd && \
-        wget https://www.ks.uiuc.edu/Research/vmd/vmd-1.9.4/files/alpha/vmd-1.9.4a38.src.tar.gz && \
-        tar -zxvf vmd-1.9.4a38.src.tar.gz
+RUN	mkdir -p /tmp/vmd
 
-COPY    data/Make-arch /tmp/vmd/plugins
-COPY    data/configure /tmp/vmd/vmd-1.9.4a38
+COPY    data/vmd-1.9.4a39.src.tar.gz /tmp/vmd/vmd-1.9.4a39.src.tar.gz
+
+
+RUN	cd /tmp/vmd && \
+        tar -zxvf vmd-1.9.4a39.src.tar.gz
+
+COPY    data/configure /tmp/vmd/vmd-1.9.4a39
+
+ENV     TCLINC=-I/usr/include/tcl8.5
+ENV     TCLLIB=-L/usr/lib/aarch64-linux-gnu/
 
 RUN     cd /tmp/vmd/plugins && \
-        make LINUXAARCH64 && \
-        PLUGINDIR=/tmp/vmd/vmd-1.9.4a38/plugins make distrib -j
+        make LINUXARM64 && \
+        PLUGINDIR=/tmp/vmd/vmd-1.9.4a39/plugins make distrib -j
 
 RUN     cd /tmp/vmd && \
         wget http://plunk.org/~grantham/actc-1.1.tar.gz && \
@@ -38,49 +42,59 @@ RUN     cd /tmp/vmd && \
         cd actc-1.1 && \
         make
 
+COPY    data/NvPipe.cu.patch /tmp/vmd
+RUN     cd /tmp/vmd && \
+        git clone https://github.com/NVIDIA/NvPipe.git && \
+        cd NvPipe && \
+        git checkout 81a0c27ae46eaaa5438e5c6428bdb90ee8165d7e && \
+        patch src/NvPipe.cu < /tmp/vmd/NvPipe.cu.patch && \
+        cmake \
+            -DCMAKE_INSTALL_PREFIX=/usr/local \
+            . && \
+        make -j && \
+        make install
+
 COPY    data/optix /tmp/vmd/optix
+COPY    data/VideoStream.C.patch /tmp/vmd
 
 ENV     OPTIX_HOME=/tmp/vmd/optix
 ENV     ACTC_HOME=/tmp/vmd/actc-1.1
-ENV     TCL_INCLUDE_DIR=/usr/include/tcl8.6
-ENV     TCL_LIBRARY_DIR=/usr/lib/tcl8.6
+ENV     TCL_INCLUDE_DIR=/usr/include/tcl8.5
+ENV     TCL_LIBRARY_DIR=/usr/lib/tcl8.5
 ENV     LIBRARY_PATH=/usr/local/cuda/targets/sbsa-linux/lib
 
-RUN     cd /tmp/vmd/vmd-1.9.4a38 && \
-        ./configure LINUXAARCH64 OPENGL EGLPBUFFER FLTK TK IMD TCL PTHREADS CUDA ACTC LIBTACHYON SILENT LIBOPTIX && \
+RUN     cd /tmp/vmd/vmd-1.9.4a39 && \
+        ./configure LINUXARM64 OPENGL EGLPBUFFER FLTK TK IMD TCL PTHREADS CUDA ACTC LIBTACHYON SILENT LIBOPTIX NVPIPE && \
         cd src && \
+        patch -R VideoStream.C < /tmp/vmd/VideoStream.C.patch && \
         make -j && \
-        mv ../LINUXAARCH64/OptiXShaders.ptx ../shaders
-
+        make install
 
 FROM    runtime
 LABEL   MAINTAINER="Ashwin Sekhar T K"
 LABEL   MAINTAINER_EMAIL="asekhar@marvell.com"
-LABEL   VMD_VERSION="vmd-1.9.4a38"
+LABEL   VMD_VERSION="vmd-1.9.4a39"
 
-COPY	--from=vmd /tmp/vmd/vmd-1.9.4a38 /usr/local/vmd
+COPY	--from=vmd /usr/local/lib /usr/local/lib/
+COPY	--from=vmd /usr/local/bin/vmd /usr/local/bin/vmd
 RUN     mkdir -p /docker/run
+COPY	data/run.sh /docker/run/run.sh
+RUN     chmod +x /docker/run/run.sh
 
-ENV     VMDDIR=/usr/local/vmd
-ENV     LD_LIBRARY_PATH=/docker/run/optix/lib64
+ENV     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/docker/run/optix/lib64
 
 # Manually mark required packages and autoremove unnecessary packages
 RUN	apt-get update -y && \
+        apt-mark manual libnvidia-gl-445 libnvidia-decode-445 && \
 	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
 	rm -rf /var/lib/apt/lists/*
 
+
 RUN	apt-get update -y && \
    	DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-	   libopengl0 \
-	   libegl1 \
 	   libtachyon-mt-0 \
-	   libtk8.6 \
-	   libfltk1.3 \
-           wget && \
-	DEBIAN_FRONTEND=noninteractive apt-get download libgl1 && \
-	DEBIAN_FRONTEND=noninteractive apt-get download libglx0 && \
-	dpkg -i --force-depends /*.deb && \
-	rm -rf /root/*deb && \
+	   libtk8.5 \
+	   libfltk1.3 && \
    	rm -rf /var/lib/apt/lists/*
 
-ENV	PATH=/usr/local/vmd/LINUXAARCH64/:${PATH}
+ENTRYPOINT sudo /docker/run/run.sh

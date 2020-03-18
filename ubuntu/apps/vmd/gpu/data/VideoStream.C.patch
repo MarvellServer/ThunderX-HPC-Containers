@@ -1,0 +1,16 @@
+127c127
+< #if defined(ARCH_SUMMIT) || defined(ARCH_OPENPOWER) || defined(ARCH_LINUXARM64)
+---
+> #if defined(ARCH_SUMMIT) || defined(ARCH_OPENPOWER)
+143c143
+<                                       nvp->targetFPS, 1920, 1080);
+---
+>                                       nvp->targetFPS);
+145c145
+<   nvp->decoder = NvPipe_CreateDecoder(nvp->format, nvp->codec, 1920, 1080);
+---
+>   nvp->decoder = NvPipe_CreateDecoder(nvp->format, nvp->codec);
+188c188
+<                                       nvp->targetFPS, 1920, 1080);
+---
+>                                       nvp->targetFPS);
