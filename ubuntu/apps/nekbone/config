@@ -1,4 +1,3 @@
-APP_TYPE=hpc
+APP_TYPE=hpc/cpu
 APP_NAME=nekbone
-TOOLCHAIN=gcc
 COMPONENTS="devel_gcc9 ucx openmpi runtime_gcc9"

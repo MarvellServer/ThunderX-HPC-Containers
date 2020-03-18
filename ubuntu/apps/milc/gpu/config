@@ -1,4 +1,3 @@
 APP_TYPE=hpc/gpu
 APP_NAME=milc
-TOOLCHAIN=gcc
 COMPONENTS="devel_cuda11 ucx openmpi openblas fftw3 cmake runtime_cuda11"

@@ -1,4 +1,3 @@
 APP_TYPE=hpc/gpu
 APP_NAME=specfem3d
-TOOLCHAIN=gcc
 COMPONENTS="devel_cuda11 ucx openmpi runtime_cuda11"
