@@ -4,6 +4,10 @@
 
 FROM devel AS cmake
 
+# install dependencies
+RUN dnf -y install ncurses-devel \
+      openssl-devel
+
 # fetch source
 RUN cd /tmp && \
     git clone https://gitlab.kitware.com/cmake/cmake.git && \

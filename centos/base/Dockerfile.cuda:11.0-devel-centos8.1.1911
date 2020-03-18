@@ -23,9 +23,14 @@ RUN dnf -y makecache && \
       cuda-nvml-devel-11-0 \
       cuda-minimal-build-11-0 \
       cuda-command-line-tools-11-0 \
-      cuda-compiler-11-0 cuda-nvcc-11-0 \
+      cuda-compiler-11-0 \
+      cuda-nvcc-11-0 \
       libcusolver-11-0 \
       cuda-toolkit-11-0
+
+# install nvidia drivers
+RUN dnf -y install nvidia-driver-libs \
+      nvidia-driver-cuda-libs
 
 # update ld.so.conf - skip redundant operations
 # RUN echo "/usr/local/cuda-11.0/targets/sbsa-linux/lib" > /etc/ld.so.conf.d/cuda-11-0.conf
