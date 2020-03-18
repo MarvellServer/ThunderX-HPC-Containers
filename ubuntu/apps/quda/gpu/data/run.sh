@@ -29,8 +29,8 @@ ulimit -s unlimited
 
 # tune run
 rm -f tunecache.tsv profile_0.tsv profile_async_0.tsv
-time mpirun ${MCA_OPTS} ${MPI_OPTS} -np 1 ${QUDA_INSTALL_DIR}/bin/dslash_test --prec single --gridsize 1 1 1 1 --dim 32 32 32 64 --recon 12 --niter 10000
+time mpirun ${MCA_OPTS} ${MPI_OPTS} -np 2 ${QUDA_INSTALL_DIR}/bin/dslash_test --prec single --gridsize 1 1 1 2 --dim 32 32 32 32 --recon 12 --niter 10000
 
 # actual run
 sleep 3
-time mpirun ${MCA_OPTS} ${MPI_OPTS} -np 1 ${QUDA_INSTALL_DIR}/bin/dslash_test --prec single --gridsize 1 1 1 1 --dim 32 32 32 64 --recon 12 --niter 10000
+time mpirun ${MCA_OPTS} ${MPI_OPTS} -np 2 ${QUDA_INSTALL_DIR}/bin/dslash_test --prec single --gridsize 1 1 1 2 --dim 32 32 32 32 --recon 12 --niter 10000

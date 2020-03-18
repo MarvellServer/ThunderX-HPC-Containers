@@ -17,7 +17,7 @@ STEPS=5000
 	-ntomp $OMP_NUM_THREADS -s topol.tpr -nb gpu -pme gpu 2>&1) > socket0.log &
 mpirun --cpu-set 32-63 --bind-to socket --report-bindings -np $MPI_PROCS \
 	gmx_mpi mdrun -v -pin off -nsteps $STEPS \
-	-noconfout -g gromacs_output -npme 1 -ntomp_pme 1 -gpu_id 0 \
+	-noconfout -g gromacs_output -npme 1 -ntomp_pme 1 -gpu_id 1 \
 	-ntomp $OMP_NUM_THREADS -s topol.tpr -nb gpu -pme gpu 2>&1 | tee socket1.log
 wait
 
