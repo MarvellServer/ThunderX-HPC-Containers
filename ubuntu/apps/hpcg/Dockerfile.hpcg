@@ -1,0 +1,54 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS hpcg
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/hpcg/bin && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+#RUN echo $LDFLAGS && exit
+#Setting the Environment variable
+ENV     CFLAGS="-O3 -g -fprefetch-loop-arrays -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math  -fopenmp -funroll-loops -std=c++11 -ffp-contract=fast"
+ENV LDFLAGS=${LDFLAGS}
+# Download source
+RUN mkdir -p /tmp/hpcg && \
+    cd /tmp/hpcg && \
+    git clone https://gitlab.com/arm-hpc/benchmarks/hpcg.git && \
+    cd hpcg && git checkout -b tdg_bcol_merged remotes/origin/tdg_bcol_merged
+
+#COPY INPUTFILES
+COPY data/Make.THUNDERX2T99 /tmp/hpcg/hpcg/setup/
+COPY data/patches /tmp/hpcg/patches
+
+RUN  git config --global user.email "ptakkar@marvell.com" && \
+     git config --global user.name "Prince Takkar"
+
+#Build the code
+RUN     cd /tmp/hpcg/hpcg && \
+        git am ../patches/001.patch && \
+        sed -i "s#__OPT_FLAGS__#$CFLAGS#g" setup/Make.THUNDERX2T99 && \
+        make arch=THUNDERX2T99 && \
+        mv bin/xhpcg /usr/local/hpcg/bin/ && \
+        mv bin/hpcg.dat /usr/local/hpcg/bin/ && \
+        rm -rf /tmp/hpcg
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   HPCG_VERSION="HPCG"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=hpcg /usr/local/hpcg/bin /usr/local/hpcg/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/hpcg/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

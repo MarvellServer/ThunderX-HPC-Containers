@@ -120,7 +120,7 @@ CXX          = mpicxx
 CXXFLAGS     = $(HPCG_DEFS) __OPT_FLAGS__
 #
 LINKER       = $(CXX)
-LINKFLAGS    = $(CXXFLAGS)
+LINKFLAGS    = $(CXXFLAGS) ${LDFLAGS}
 #
 ARCHIVER     = ar
 ARFLAGS      = r

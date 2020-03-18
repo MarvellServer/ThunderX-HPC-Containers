@@ -1,0 +1,4 @@
+56c56
+<   #pragma omp parallel default(none) shared(local_residual, v1v, v2v)
+---
+>   #pragma omp parallel default(none) shared(local_residual, v1v, v2v,n)
