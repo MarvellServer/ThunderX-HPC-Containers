@@ -1,0 +1,3 @@
+APP_TYPE=hpc/cpu
+APP_NAME=tensorflow_1.15.0
+COMPONENTS="devel_gcc8 cmake ucx openmpi openblas hdf5 runtime_gcc8"

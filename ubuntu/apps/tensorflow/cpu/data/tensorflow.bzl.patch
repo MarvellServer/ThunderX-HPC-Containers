@@ -1,0 +1,4 @@
+1809c1809
+<             clean_dep("//tensorflow/core:lib"),
+---
+>             #clean_dep("//tensorflow/core:lib"),
