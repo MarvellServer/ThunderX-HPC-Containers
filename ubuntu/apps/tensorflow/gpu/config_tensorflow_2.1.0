@@ -1,0 +1,3 @@
+APP_TYPE=hpc/gpu
+APP_NAME=tensorflow_2.1.0
+COMPONENTS="devel_cuda10 cmake ucx openmpi openblas hdf5 runtime_cuda10"
