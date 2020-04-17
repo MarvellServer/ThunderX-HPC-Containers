@@ -1,0 +1,78 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS ncar
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/waccm/bin && \
+    mkdir -p /docker/data && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src && \
+    mkdir -p /usr/local/clubb/bin && \
+    mkdir -p /usr/local/mg2/bin
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90
+
+# Download source
+RUN cd /tmp && \
+    git clone https://github.com/NCAR/kernelOptimization.git && \
+    mv /tmp/kernelOptimization/all/WACCM_imp_sol_vector /tmp/ && \
+    mv /tmp/kernelOptimization/all/CESM2_CLUBB /tmp/ && \
+    mv /tmp/kernelOptimization/all/CESM2_MG2 /tmp/ && \
+    rm -rf /tmp/kernelOptimization
+
+#COPY INPUTFILES
+COPY data/Macros.waccm /tmp/WACCM_imp_sol_vector/v05/Macros
+COPY data/Macros.clubb /tmp/CESM2_CLUBB/v01/Macros
+COPY data/Macros.mg2 /tmp/CESM2_MG2/v14/Macros
+
+#Build the WACCM code
+RUN cd /tmp/WACCM_imp_sol_vector/v05/ && \
+    LDFLAGS="${LDFLAGS} -Ofast -fprefetch-loop-arrays -g -ffp-contract=fast -ffree-form -ffree-line-length-none" && \
+    sed -i "s#__LD_FLAGS__#$LDFLAGS#g" /tmp/WACCM_imp_sol_vector/v05/Macros && \
+    make && \
+    cp -r kernel.exe /usr/local/waccm/bin
+
+#Build the CLUBB code
+RUN cd /tmp/CESM2_CLUBB/v01/ && \
+    LDFLAGS="${LDFLAGS} -Ofast -fprefetch-loop-arrays -g -ffp-contract=fast -ffree-form -ffree-line-length-none" && \
+    sed -i "s#__LD_FLAGS__#$LDFLAGS#g" /tmp/CESM2_CLUBB/v01/Macros && \
+    make && \
+    cp -r kernel.exe /usr/local/clubb/bin
+
+#Build the MG2 code
+RUN cd /tmp/CESM2_MG2/v14/ && \
+    LDFLAGS="${LDFLAGS} -Ofast -fprefetch-loop-arrays -g -ffp-contract=fast -ffree-form -ffree-line-length-none" && \
+    sed -i "s#__LD_FLAGS__#$LDFLAGS#g" /tmp/CESM2_MG2/v14/Macros && \
+    make && \
+    cp -r kernel.exe /usr/local/mg2/bin
+
+ 
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   KMI_HASH_VERSION="KMI_HASH_CORAL_BENCHMARK"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=ncar /usr/local/waccm/bin /usr/local/waccm/bin
+COPY    --from=ncar /tmp/WACCM_imp_sol_vector/data /docker/data
+
+COPY    --from=ncar /usr/local/clubb/bin /usr/local/clubb/bin
+COPY    --from=ncar /tmp/CESM2_CLUBB/data /docker/data
+
+COPY    --from=ncar /usr/local/mg2/bin /usr/local/mg2/bin
+COPY    --from=ncar /tmp/CESM2_MG2/data.72cores /docker/data.72cores
+
+COPY    data/ /docker/run/
+
+#ENV     PATH=/usr/local/waccm/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

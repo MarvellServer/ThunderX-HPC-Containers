@@ -1,0 +1,8 @@
+---------
+NOTES
+---------
+
+This ncar consist of WACCM , CLUBB and MG2 benchmarks. Distinguish it during the docker run command line argument by setting input parameter "RUN=waccm/clubb/mg2".
+
+See the following example to run waccm benchmark.
+docker run -it --env RUN=waccm --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/ncar:2020.02-dev

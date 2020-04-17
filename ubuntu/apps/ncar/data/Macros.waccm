@@ -1,0 +1,108 @@
+# Conditional Makefile macros for this kernel & version:
+
+# User settings (all case-insensitive):
+COMPILER = gnu         # Intel, GNU, ARM (later, PGI?)
+ARCH     = bdw         # Not currently used (using xHost/native modes)
+MPI      = yes         # Yes/No, True/False or Enabled/Disabled
+
+# ******************************************************************
+# Provide system aliases that MIGHT need to be modified by the end user:
+MPIFC = mpif90         # Could be mpif90 (default), or mpiifort, etc
+
+# Convert all above vars to lower case:
+COMPILER := $(shell echo ${COMPILER} | tr '[:upper:]' '[:lower:]')
+ARCH     := $(shell echo ${ARCH}     | tr '[:upper:]' '[:lower:]')
+MPI      := $(shell echo ${MPI}      | tr '[:upper:]' '[:lower:]')
+
+# Zero out our key variables:
+#FC := 
+#FC_FLAGS := 
+#LD_FLAGS := 
+
+# Convert all 'true' MPI answers to 'yes', otherwise no:
+ifeq ($(MPI),true)
+  MPI := yes
+else ifeq ($(MPI),enabled)
+  MPI := yes
+endif
+
+# If the ARMPL_DIR variable is set, add it to the link:
+ifneq ($(strip $(ARMPL_DIR)),)
+  LD_FLAGS += #-L/opt/arm/arm-hpc-compiler-19.2_Generic-AArch64_RHEL-7_aarch64-linux/lib -L${ARMPL_DIR}/lib -larmpl_lp64 -lamath -lsimdmath
+endif
+
+# If the MKLROOT variable is set, add that to the link:
+ifneq ($(strip $(MKLROOT)),)
+  LD_FLAGS += -L${MKLROOT}/lib/intel64 -lmkl_rt
+endif
+
+# Note: For simplicity, we're going to ignore cross-compilation and use the "-march=native" (gnu), 
+# "-mcpu=native" /armflang) and "-xHost" (intel) compiler flags to optimize for the platform we're on.  
+# Change in the second FC_FLAGS  setting below if that doesn't apply.
+
+# Set up the default VECLEN length:
+FC_FLAGS += -D _VECLEN=20 # Best for BDW and Arm; change to 8 on SKX
+
+# ********* Intel compiler options  ************
+ifeq ($(COMPILER),intel)
+  FC := ifort
+  FC_FLAGS += -convert big_endian -assume byterecl -fp-model fast -free -O3 -align array64byte -qno-opt-dynamic-align
+  LD_FLAGS += 
+
+  FC_FLAGS += -xHost
+endif
+
+
+# ********* NEC compiler options  ************
+ifeq ($(COMPILER),nec)
+  FC := nfort
+  FC_FLAGS += -v -O4 -finline-functions -report-all -fdiag-vector=2 -D_NOGETPID
+  FC_FLAGS += -D _VECLEN=768 # Best?  Check w/ John - maybe 256 works too.  Depends on # of cores?
+  LD_FLAGS += -proginf
+
+  FC_FLAGS +=
+  MPIFC = mpinfort 
+endif
+
+
+# ********* Cray compiler options  ************
+ifeq ($(COMPILER),cray)
+  FC := ftn
+  FC_FLAGS += -O3
+  LD_FLAGS +=
+
+  MPIFC = ftn
+endif
+
+
+#USE HPC_INSTALLROOT option with new glibc
+HPC_INSTALLROOT=/opt/marvell/apps/gcc/8.2.0-glibc-2.29
+HPC_OPENMPI_PATH=/opt/marvell/apps/openmpi/4.0.0-glibc-2.29
+#GCC vectorization option -fopt-info-vec -fopt-info-vec-missed
+
+# ********* GNU compiler options  ************
+ifeq ($(COMPILER),gnu)
+  FC := gfortran
+  FC_FLAGS += -Ofast -fprefetch-loop-arrays -g -ffp-contract=fast -ffree-form -ffree-line-length-none
+  LD_FLAGS += __LD_FLAGS__
+  FC_FLAGS += -march=native
+endif
+
+
+# ********* ARM compiler options  ************
+ifeq ($(COMPILER),arm)
+  FC := armflang
+  FC_FLAGS += -Ofast -ffree-form -ffree-line-length-none -D_NOGETPID -flto
+  LD_FLAGS += -flto
+  LD_FLAGS += 
+
+  FC_FLAGS += -mcpu=native
+endif
+
+
+# If we're using MPI, then use ${MPIFC}
+ifeq ($(MPI),yes)
+  FC := ${MPIFC}
+  FC_FLAGS += -D_MPI
+endif
+
