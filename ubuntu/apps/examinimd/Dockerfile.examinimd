@@ -1,0 +1,53 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS examinimd
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/examinimd/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90
+
+# Download source
+RUN cd /tmp && \
+    wget https://github.com/ECP-copa/ExaMiniMD/archive/1.0.tar.gz && \
+    tar -zxvf 1.0.tar.gz && \
+    wget https://github.com/kokkos/kokkos/archive/2.9.00.tar.gz && \
+    tar -zxvf 2.9.00.tar.gz
+
+#COPY INPUTFILES
+COPY data/Makefile /tmp/ExaMiniMD-1.0/src/
+
+#Build the code
+RUN cd /tmp/ExaMiniMD-1.0/ && \
+    CFLAGS="${CFLAGS} -O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays" && \
+    LDFLAGS="${LDFLAGS} -O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays" && \
+    sed -i "s#__FLAGS__#$CFLAGS#g" src/Makefile && \
+    sed -i "s#__LD_FLAGS__#$LDFLAGS#g" src/Makefile && \
+    sed -i "s#__KOKKOS_PATH__#/tmp/kokkos-2.9.00#g" src/Makefile && \
+    make -j && \
+    cp -r /tmp/ExaMiniMD-1.0/src/ExaMiniMD /usr/local/examinimd/bin
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   EXAMINIMD_VERSION="EXAMINIMD-1.0"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=examinimd /usr/local/examinimd/bin /usr/local/examinimd/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/examinimd/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest
