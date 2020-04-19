@@ -1,0 +1,45 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS sw4lite
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/sw4lite/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+# Download source
+RUN cd /tmp && \
+    git clone https://github.com/geodynamics/sw4lite.git
+
+#Build the code
+RUN cd /tmp/sw4lite/ && \
+    sed -i "s#OMPOPT = -fopenmp#OMPOPT = -O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -finline-functions -ffast-math -fopenmp#g" Makefile && \
+    sed -i "s#openmp = no#openmp = yes#g" Makefile && \
+    sed -i "s#CXX = mpic++#CXX = mpicxx#g" Makefile && \
+    sed -i "s#EXTRA_LINK_FLAGS = -lgfortran -lblas -llapack#EXTRA_LINK_FLAGS = -lgfortran -lopenblas ${LDFLAGS}#g" Makefile && \
+    make ckernel=yes && \
+    cp -r optimize_mp_c/sw4lite /usr/local/sw4lite/bin/ && \
+     cp -r tests/loh1/LOH.1-h50.in /docker/run/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   SW4LITE="SW4LITE_BENCHMARK"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+COPY    --from=openblas /usr/local /usr/local
+
+COPY    --from=sw4lite /usr/local/sw4lite/bin /usr/local/sw4lite/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/sw4lite/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest
