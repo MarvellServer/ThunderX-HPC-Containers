@@ -1,0 +1,51 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS su2
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/su2/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+# Download source
+RUN cd /tmp && \
+    git clone -b feature_bench https://github.com/su2code/SU2.git && \
+    git config --global user.email "ptakkar@marvell.com" && \
+    git config --global user.name "Prince Takkar" && \
+    cd /tmp/SU2 && \
+    git revert afe2d7eb
+
+ENV SU2_RUN="/tmp/SU2/bin" \
+    SU2_HOME="/tmp/SU2/" \
+    CC=mpicc \
+    CXX=mpicxx 
+
+#Build the code
+RUN cd /tmp/SU2 && \
+    export CXXFLAGS="-O3 -g -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -funroll-loops ${CXXFLAGS}" && \
+    export CFLAGS="-O3 -g -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -funroll-loops ${CFLAGS}" && \
+    export LDFLAGS="-O3 -g -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -funroll-loops ${LDFLAGS}" && \
+    ./bootstrap && \
+    ./configure --prefix=/usr/local --enable-mpi && \
+    make -j && make install
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   SU2_VERSION="SU2-6.2.0"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=su2 /usr/local/bin/SU2_CFD /usr/local/su2/bin/
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/su2/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

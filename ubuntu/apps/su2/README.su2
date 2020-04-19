@@ -1,0 +1,9 @@
+----------
+NOTES
+----------
+The Docker run command expects the input mesh file directory mesh_ONERAM6_9mio.cgns
+to be mapped to /docker/run/DATA directory inside the container.
+
+Map the directory using the -v option of docker run command.
+Eg: docker run -it -v /hostpath/inputfiles/:/docker/run/DATA --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/su2:2020.02-dev
+
