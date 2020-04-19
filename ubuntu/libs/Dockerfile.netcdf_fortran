@@ -1,0 +1,31 @@
+###############################################################################
+# NETCDF_FORTRAN                                                                     #
+###############################################################################
+FROM devel AS netcdf_fortran
+COPY --from=openmpi /usr/local /usr/local
+COPY --from=cmake /usr/local /usr/local
+COPY --from=hdf5 /usr/local /usr/local
+COPY --from=pnetcdf /usr/local /usr/local
+COPY --from=netcdf /usr/local /usr/local
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    F77=mpif77 \
+    FC=mpif90 \
+    MPICC=mpicc \
+    MPIFC=mpif90 \
+    MPICXX=mpicxx
+
+
+RUN mkdir -p /tmp/netcdf_fortran && \
+    cd /tmp/netcdf_fortran && \
+    wget https://github.com/Unidata/netcdf-fortran/archive/v4.4.4.tar.gz && \
+    tar -zxvf v4.4.4.tar.gz && \
+    cd /tmp/netcdf_fortran/netcdf-fortran-4.4.4 && \
+    ./configure  --prefix=/usr/local --enable-shared --with-pic --disable-doxygen && \
+    make -j && make install && \
+    rm -rf /tmp/netcdf_fortran
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
