@@ -1,0 +1,16 @@
+###############################################################################
+# LIBXML2                                                                     #
+###############################################################################
+FROM devel AS libxml2
+RUN mkdir -p /tmp/libxml2 && \
+    cd /tmp/libxml2 && \
+    wget ftp://xmlsoft.org/libxml2/libxml2-2.9.9.tar.gz && \
+    tar -zxvf libxml2-2.9.9.tar.gz && \
+    cd libxml2-2.9.9 && \
+    ./configure --without-python --prefix=/usr/local/ && \
+    make -j && make install && \
+    rm -rf /tmp/libxml2
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
