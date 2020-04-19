@@ -1,0 +1,16 @@
+###############################################################################
+# BINUTILS                                                                     #
+###############################################################################
+FROM devel AS binutils
+RUN mkdir -p /tmp/binutils && \
+    cd /tmp/binutils && \
+    wget https://ftp.gnu.org/gnu/binutils/binutils-2.31.tar.gz && \
+    tar -zxvf binutils-2.31.tar.gz && \
+    cd binutils-2.31 && \
+    ./configure --prefix=/usr/local/ && \
+    make -j && make install && \
+    rm -rf /tmp/binutils
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
