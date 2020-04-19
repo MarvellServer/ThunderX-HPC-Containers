@@ -1,0 +1,16 @@
+###############################################################################
+# HYPRE                                                                     #
+###############################################################################
+FROM devel AS hypre
+COPY --from=openmpi /usr/local /usr/local
+RUN mkdir -p /tmp/hypre && \
+    cd /tmp/hypre && \
+    wget https://github.com/hypre-space/hypre/archive/v2.11.2.tar.gz && \
+    tar -zxvf v2.11.2.tar.gz && \
+    cd hypre-2.11.2/src && \
+    ./configure --prefix=/usr/local && \
+    make -j && make install -j 
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
