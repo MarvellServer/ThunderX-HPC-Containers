@@ -1,0 +1,61 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS nyx
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+COPY    --from=sundials /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/nyx/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90
+
+# Download source
+RUN cd /tmp && \
+    wget https://github.com/AMReX-Astro/Nyx/archive/19.08.tar.gz && \
+    mv 19.08.tar.gz nyx-19.08.tar.gz && \
+    tar -zxvf nyx-19.08.tar.gz && \
+    wget https://github.com/AMReX-Codes/amrex/archive/19.08.tar.gz && \
+    mv 19.08.tar.gz amrex-19.08.tar.gz && \
+    tar -zxvf amrex-19.08.tar.gz
+
+#COPY INPUTFILES
+COPY data/gnu.mak /tmp/amrex-19.08/Tools/GNUMake/comps/gnu.mak
+COPY data/GNUmakefile /tmp/Nyx-19.08/Exec/LyA
+
+#Build the code
+RUN cd /tmp/Nyx-19.08/Exec/LyA && \
+    CFLAGS="${CFLAGS} -g -O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse -ffast-math -fopenmp -fprefetch-loop-arrays" && \
+    sed -i "s#__FLAGS__#$CFLAGS#g" /tmp/amrex-19.08/Tools/GNUMake/comps/gnu.mak && \
+    make -j && \
+    cp -r /tmp/Nyx-19.08/Exec/LyA/Nyx3d.gnu.MPI.OMP.ex /usr/local/nyx/bin/
+
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   NYX_VERSION="NYX-19.08"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+COPY    --from=sundials /usr/local/ /usr/local/
+
+COPY    --from=nyx /usr/local/nyx/bin /usr/local/nyx/bin
+COPY    --from=nyx /tmp/Nyx-19.08/Exec/LyA/TREECOOL_middle /docker/run/
+COPY    --from=nyx /tmp/Nyx-19.08/Exec/LyA/probin /docker/run/
+COPY    data/ /docker/run/
+
+RUN	mkdir -p /docker/run/DATA
+ENV     PATH=/usr/local/nyx/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

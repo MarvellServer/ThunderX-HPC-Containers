@@ -1,0 +1,11 @@
+-------------
+NYX NOTES
+-------------
+The Docker run command expects the input files directory inputfiles/
+to be mapped to /docker/run/DATA directory inside the container.
+
+The input files can be downloaded from 
+wget https://portal.nersc.gov/project/nyx/ICs/512ss_20mpc.nyx
+
+Map the directory using the -v option of docker run command.
+Eg: docker run -it -v /path/to/inputfiles_dir/:docker/run/DATA --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/nyx:2020.04-de
