@@ -1,0 +1,66 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS quantumespresso
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=scalapack /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/quantumespresso/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90 \
+    F77=mpif77 \
+    F90=mpif90 \
+    FC=mpif90 \
+    CFLAGS="-O3 -g -funroll-loops -mtune=native -march=native -finline-functions -ffast-math" \
+    FFLAGS="-O3 -g -funroll-loops -mtune=native -march=native -finline-functions -ffast-math"
+
+# Download source
+RUN cd /tmp && \
+    wget https://gitlab.com/QEF/q-e/-/archive/qe-6.4.1/q-e-qe-6.4.1.tar.gz && \
+    tar -zxvf q-e-qe-6.4.1.tar.gz
+
+#COPY INPUTFILES
+#COPY data/Makefile /tmp/quantumespresso/src/
+#COPY data/Makefile_test /tmp/quantumespresso/tests/Makefile
+
+#Build the code
+RUN cd /tmp/q-e-qe-6.4.1 && \
+    CC=mpicc && \
+    CXX=mpicxx && \
+    FC=mpif90 && \
+    F77=mpif77 && \
+    F90=mpif90 && \
+    FC=mpif90 && \
+    ./configure --prefix=/tmp/q-e-qe-6.4.1/ --enable-parallel --enable-openmp ARCH=arm  BLAS_LIBS="-L/usr/local/lib/ -lopenblas" LAPACK_LIBS="-L/usr/local/lib/ -lopenblas"  SCALAPACK_LIBS="-L/usr/local/lib/ -lscalapack"  FFT_LIBS="-L/usr/local/lib/ -lfftw3" F77=$F77 F90=$F90 FC=$FC CC=$CC && \
+    sed -i "s#D__FFTW3#D__FFTW#g" make.inc && \
+    sed -i "s#PREFIX.*#PREFIX=/usr/local/quantumespresso/#g" make.inc && \
+    make all && \
+    make install
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   QUANTUM_ESPRESSO_VERSION="QUANTUM_ESPRESSO-8.3"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=scalapack /usr/local /usr/local
+
+COPY    --from=quantumespresso /usr/local/quantumespresso/bin /usr/local/quantumespresso/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/quantumespresso/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

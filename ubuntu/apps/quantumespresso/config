@@ -1,0 +1,4 @@
+APP_TYPE=hpc
+APP_NAME=quantumespresso
+TOOLCHAIN=gcc
+COMPONENTS="devel_gcc9 ucx openmpi openblas cmake fftw3 scalapack hdf5 runtime_gcc9"
