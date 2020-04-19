@@ -1,0 +1,41 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS minivite
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/minivite/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+# Download source
+RUN cd /tmp && \
+    git clone https://github.com/Exa-Graph/miniVite.git
+
+#COPY INPUTFILES
+COPY data/Makefile /tmp/miniVite/
+
+#Build the code
+RUN cd /tmp/miniVite/ && \
+    make && \
+    cp -r miniVite /usr/local/minivite/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   MINIVITE_VERSION="MINIVITE_BENCHMARK"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=minivite /usr/local/minivite/bin /usr/local/minivite/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/minivite/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest
