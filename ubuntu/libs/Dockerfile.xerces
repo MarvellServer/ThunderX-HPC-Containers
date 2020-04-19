@@ -1,0 +1,25 @@
+###############################################################################
+# XERCES-C                                                                     #
+###############################################################################
+FROM devel AS xerces
+COPY --from=openmpi /usr/local /usr/local
+COPY --from=cmake /usr/local /usr/local
+RUN mkdir -p /tmp/xerces && \
+    cd /tmp/xerces && \
+    wget http://apachemirror.wuchna.com//xerces/c/3/sources/xerces-c-3.2.2.tar.gz && \
+    tar -zxvf xerces-c-3.2.2.tar.gz && \
+    cd xerces-c-3.2.2 && \
+    ./configure --prefix=/usr/local --enable-transcoder-gnuiconv && \
+    make -j && make install && \
+    rm -rf /tmp/xerces
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
+
+
+    #cmake \
+    #    -G "Unix Makefiles" \
+     #   -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+     #   -DCMAKE_BUILD_TYPE=Debug \
+     #   .. && \
