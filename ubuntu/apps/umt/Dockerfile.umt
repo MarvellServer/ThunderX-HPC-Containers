@@ -1,0 +1,54 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS umt
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/umt/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+# Download source
+RUN cd /tmp && \
+    git clone https://github.com/LLNL/UMT.git
+
+#COPY INPUTFILES
+COPY data/make.defs /tmp/UMT/
+COPY data/patch /tmp/
+
+#Build the code
+RUN cd /tmp/UMT && \
+    patch -p1 < /tmp/patch && \
+    CFLAGS="${CFLAGS} -O3 -g -ffast-math -mcpu=thunderx2t99 -march=armv8.1-a+lse -fopenmp -fprefetch-loop-arrays -funroll-all-loops" && \
+    LDFLAGS="${LDFLAGS} -O3 -g -ffast-math -mcpu=thunderx2t99 -march=armv8.1-a+lse -fopenmp -fprefetch-loop-arrays -funroll-all-loops" && \
+    sed -i "s#__MPI_PATH__#/usr/local#g" make.defs && \
+    sed -i "s#__FLAGS__#$CFLAGS#g" make.defs && \
+    sed -i "s#__LD_FLAGS__#$LDFLAGS#g" make.defs && \
+    make && \
+    cd Teton && \
+    make && make SuOlsonTest && \
+    cp -r SuOlsonTest /usr/local/umt/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   UMT_VERSION="UMT_BENCHMARK"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=umt /usr/local/umt/bin /usr/local/umt/bin
+COPY    --from=umt /tmp/UMT/Teton/libInfrastructure.so /docker/run/
+COPY    --from=umt /tmp/UMT/Teton/libTetonUtils.so /docker/run/
+COPY    --from=umt /tmp/UMT/cmg2Kull/sources/libc2k.so /docker/run/
+COPY    --from=umt /tmp/UMT/CMG_CLEAN/src/libcmgp.so /docker/run/
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/umt/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest
