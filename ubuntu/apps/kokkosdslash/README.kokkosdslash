@@ -1,0 +1,8 @@
+---------
+NOTES
+---------
+
+Application gives best performance with SMT=2.
+
+Run the following command to run the docker-
+docker run -it --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/kokkosdslash:2020.04-dev

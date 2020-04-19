@@ -1,0 +1,4 @@
+36c36
+< static constexpr int V=8;
+---
+> static constexpr int V=2;

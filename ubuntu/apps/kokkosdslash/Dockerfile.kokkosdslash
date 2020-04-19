@@ -1,0 +1,59 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS kokkosdslash
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=cmake /usr/local /usr/local
+COPY    --from=binutils /usr/local /usr/local
+COPY    --from=libxml2 /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/kokkosdslash/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+# Download source
+RUN cd /tmp && \
+    git clone https://github.com/bjoo/KokkosDslashWorkspace.git && \
+    cd KokkosDslashWorkspace && \
+    git checkout 75ed3dde6e23653a3953452f4600dd2117bdb0e3 && \
+    git submodule update --init --recursive && \
+    rm -rf env*
+
+#COPY INPUTFILES
+COPY data/patches/ /tmp/patches/
+COPY data/env.sh /tmp/KokkosDslashWorkspace/
+COPY data/build_qdp++-scalar.sh /tmp/KokkosDslashWorkspace/
+COPY data/build_kokkos_dslash.sh /tmp/KokkosDslashWorkspace/
+
+#Build the code
+RUN cd /tmp/KokkosDslashWorkspace/ && \
+    patch src/KokkosDslash/test/test_kokkos_vectype.cpp < /tmp/patches/001.patch && \
+    patch src/KokkosDslash/test/test_kokkos_vnode.cpp < /tmp/patches/002.patch && \
+    patch src/KokkosDslash/test/test_kokkos_vperf.cpp < /tmp/patches/003.patch && \
+    bash -c "./build_qdp++-scalar.sh" && \
+    sed -i "s#\"-L/usr/local/lib -Wl.*\"#\"  \"#g" /tmp/KokkosDslashWorkspace/install/qdp++-scalar/share/FindQDPXX.cmake && \
+    bash -c "./build_kokkos_dslash.sh" && \
+    cp -r /tmp/KokkosDslashWorkspace/build/build_kokkos_dslash/test/test_kokkos_vperf /usr/local/kokkosdslash/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   KMI_HASH_VERSION="KMI_HASH_CORAL_BENCHMARK"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+COPY    --from=cmake /usr/local /usr/local
+COPY    --from=binutils /usr/local /usr/local
+COPY    --from=libxml2 /usr/local /usr/local
+
+COPY    --from=kokkosdslash /usr/local/kokkosdslash/bin /usr/local/kokkosdslash/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/kokkosdslash/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

@@ -1,0 +1,4 @@
+41c41
+< static constexpr int VectorLength=8;
+---
+> static constexpr int VectorLength=2;
