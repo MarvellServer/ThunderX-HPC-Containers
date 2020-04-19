@@ -1,0 +1,51 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS miniamr
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/miniamr/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90
+
+# Download source
+RUN cd /tmp && \
+    wget https://github.com/Mantevo/miniAMR/archive/v1.4.3.tar.gz && \
+    tar -zxvf v1.4.3.tar.gz
+
+#COPY INPUTFILES
+COPY data/Makefile /tmp/miniAMR-1.4.3/openmp/
+
+#Build the code
+RUN cd /tmp/miniAMR-1.4.3/openmp && \
+    make && \
+    cp -r ma.x /usr/local/miniamr/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   MINIAMR_VERSION="MINIAMR-1.4.3"
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        bc && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=miniamr /usr/local/miniamr/bin /usr/local/miniamr/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/miniamr/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

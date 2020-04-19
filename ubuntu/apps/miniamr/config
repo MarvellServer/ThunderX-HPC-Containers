@@ -1,0 +1,4 @@
+APP_TYPE=hpc
+APP_NAME=miniamr
+TOOLCHAIN=gcc
+COMPONENTS="devel_gcc9 ucx openmpi runtime_gcc9"
