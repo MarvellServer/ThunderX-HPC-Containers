@@ -1,0 +1,52 @@
+###############################################################################
+# SUNDIALS                                                                     #
+###############################################################################
+FROM devel AS sundials
+COPY --from=openmpi /usr/local /usr/local
+COPY --from=openblas /usr/local /usr/local
+COPY --from=cmake /usr/local /usr/local
+COPY --from=hypre /usr/local /usr/local
+RUN mkdir -p /tmp/sundials && \
+    cd /tmp/sundials && \
+    wget https://computing.llnl.gov/projects/sundials/download/sundials-4.1.0.tar.gz && \
+    tar -zxvf sundials-4.1.0.tar.gz && \
+    cd sundials-4.1.0 && \
+    mkdir build && cd build && \
+    cmake -v  \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DEXAMPLES_INSTALL_PATH=/usr/local/examples \
+        -DBUILD_ARKODE=ON \
+        -DBUILD_CVODE=ON \
+        -DBUILD_CVODES=ON \
+        -DBUILD_IDA=ON \
+        -DBUILD_IDAS=ON \
+        -DBUILD_KINSOL=ON \
+        -DBUILD_SHARED_LIBS=ON \
+        -DBUILD_STATIC_LIBS=ON \
+        -DCMAKE_BUILD_TYPE="RELEASE" \
+        -DCMAKE_C_COMPILER="mpicc" \
+        -DCMAKE_C_FLAGS="-O3 -mcpu=thunderx2t99 -march=armv8.1-a+lse" \
+        -DCMAKE_C_FLAGS_DEBUG="-g"  \
+        -DCMAKE_C_FLAGS_MINSIZEREL=-O3  \
+        -DCMAKE_C_FLAGS_RELEASE="-O3 -DNDEBUG" \
+        -DCMAKE_Fortran_COMPILER="mpif90" \
+        -DEXAMPLES_ENABLE_C=ON \
+        -DEXAMPLES_INSTALL=ON \
+        -DHYPRE_ENABLE=ON \
+        -DHYPRE_INCLUDE_DIR=/usr/local/include \
+        -DHYPRE_LIBRARY=/usr/local/lib/libHYPRE.a \
+        -DLAPACK_ENABLE=ON \
+        -DLAPACK_LIBRARIES=/usr/local/lib/libopenblas.so \
+        -DMPI_ENABLE=ON \
+        -DMPI_MPIF77=/usr/local/bin/mpif77 \
+        -DOPENMP_ENABLE=ON \
+        -DPTHREAD_ENABLE=ON \
+        -DUSE_GENERIC_MATH=ON \
+	-DF77_INTERFACE_ENABLE=ON \
+        -DFCMIX_ENABLE=ON  \
+        .. && \
+        make -j && make install -j
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
