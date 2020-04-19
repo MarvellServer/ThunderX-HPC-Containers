@@ -1,0 +1,15 @@
+###############################################################################
+# ZLIB                                                                     #
+###############################################################################
+FROM devel AS zlib
+RUN mkdir -p /tmp/zlib && \
+    cd /tmp/zlib && \
+    wget https://zlib.net/zlib-1.2.11.tar.gz && \
+    tar -zxvf zlib-1.2.11.tar.gz && \
+    cd /tmp/zlib/zlib-1.2.11 && \
+    ./configure --prefix=/usr/local && \
+    make -j && make install
+
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
+	rm -rf /var/lib/apt/lists/*
