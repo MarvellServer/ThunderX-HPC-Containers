@@ -1,0 +1,55 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS qbox
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=scalapack /usr/local /usr/local
+COPY    --from=xerces /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/qbox/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90
+
+# Download source
+RUN cd /tmp && \
+    wget https://github.com/qboxcode/qbox-public/archive/rel1_68_0.tar.gz && \
+    tar -zxvf rel1_68_0.tar.gz
+
+#COPY INPUTFILES
+COPY data/linux_x86_64_gnu_noxml.mk /tmp/qbox-public-rel1_68_0/src/
+
+#Build the code
+RUN cd /tmp/qbox-public-rel1_68_0/src && \
+    export TARGET=linux_x86_64_gnu_noxml && \
+    make && \
+    cp -r qb /usr/local/qbox/bin/
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   QBOX_VERSION="QBOX_rel1_68_0"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+COPY    --from=openblas /usr/local /usr/local
+COPY    --from=fftw3 /usr/local /usr/local
+COPY    --from=scalapack /usr/local /usr/local
+COPY    --from=xerces /usr/local /usr/local
+
+COPY    --from=qbox /usr/local/qbox/bin /usr/local/qbox/bin
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/qbox/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest
