@@ -22,6 +22,10 @@ RUN    mkdir -p /tmp/pnetcdf && \
        cd parallel-netcdf-1.8.1 && \
        wget 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD' -O scripts/config.guess && \
        wget 'http://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD' -O scripts/config.sub && \
+       export CFLAGS="${CFLAGS} -I/usr/local/include -O3 -fPIC -DPIC" && \
+       export CXXFLAGS="${CXXFLAGS} -I/usr/include -O3 -fPIC -DPIC" && \
+       export FFLAGS="${FFLAGS} -I/usr/include -O3 -fPIC" && \
+       export FCFLAGS="${FCFLAGS} -I/usr/include -O3 -fPIC" && \
        ./configure  --prefix=/usr/local  && \
        make -j && \
        make install -j && \
