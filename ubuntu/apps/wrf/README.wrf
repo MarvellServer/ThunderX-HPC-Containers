@@ -1,0 +1,10 @@
+-------------
+WRF NOTES
+-------------
+1) Application gives the best performance with SMT=2.
+
+2) The Docker run command expects the input files directory bench_12km 
+to be mapped to /docker/run/bench_run directory inside the container.
+
+Map the directory using the -v option of docker run command.
+Eg: docker run -it -v /hostpath/bench_12km:/docker/run/bench_run/ --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/wrf:2020.04-dev

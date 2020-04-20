@@ -1,0 +1,76 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS wrf
+
+COPY    --from=openmpi /usr/local /usr/local
+COPY    --from=pnetcdf /usr/local /usr/local
+COPY    --from=netcdf /usr/local /usr/local
+COPY    --from=hdf5 /usr/local /usr/local
+COPY    --from=netcdf_fortran /usr/local /usr/local
+COPY    --from=zlib /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/wrf/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src && \
+    mkdir -p /docker/run/rsl
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+    csh && \
+    rm -rf /var/lib/apt/lists/*
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90 \
+    F77=mpif77 \
+    MPICC=mpicc \
+    MPIFC=mpif90 \
+    MPICXX=mpicxx
+
+# Download source
+RUN cd /tmp && \
+    wget https://github.com/NCAR/WRFV3/archive/V3.9.1.1.tar.gz && \
+    tar -zxvf V3.9.1.1.tar.gz
+
+#COPY INPUTFILES
+COPY data/configure_new.defaults /tmp/WRFV3-3.9.1.1/arch/
+COPY data/configure.wrf /tmp/WRFV3-3.9.1.1/
+
+#Build the code
+RUN cd /tmp/WRFV3-3.9.1.1 && \
+    export NETCDF=/usr/local/ && \
+    export HDF5=/usr/local/ && \
+    export WRFIO_NCD_LARGE_FILE_SUPPORT=1 && \
+    sed -i 's/time \$/$/' ./configure.wrf && \
+    sed -i 's/\$second_word" <= "20"/\$second_word" <= "64"/g' compile && \
+     ./compile -j 64 wrf
+
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   WRF_VERSION="WRF-3.9.1.1"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+COPY    --from=pnetcdf /usr/local /usr/local
+COPY    --from=netcdf /usr/local /usr/local
+COPY    --from=hdf5 /usr/local /usr/local
+COPY    --from=netcdf_fortran /usr/local /usr/local
+COPY    --from=zlib /usr/local /usr/local
+
+RUN sudo apt-get update -y && \
+    sudo apt-get install -y python3-pip && \
+    sudo rm -rf /var/lib/apt/lists/*
+
+COPY    --from=wrf /tmp/WRFV3-3.9.1.1/main/wrf.exe /usr/local/wrf/bin/
+COPY    --from=wrf /tmp/WRFV3-3.9.1.1/run/RRTM_DATA /docker/run/
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/wrf/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest
