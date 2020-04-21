@@ -1,0 +1,10 @@
+-------------
+PHLOEM NOTES
+-------------
+
+Application requires two runs- one for bandwidth and other for latency.
+
+By default, test for latency will run. For measuring bandwidth performance, set input parameter INPUT=Bandwidth in docker run command.
+
+For eg. 
+docker run -it --env INPUT=Bandwidth --rm --cap-add=SYS_PTRACE --cap-add=SYS_NICE --shm-size=1G hpc/phloem:2020.04-dev

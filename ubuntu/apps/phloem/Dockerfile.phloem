@@ -1,0 +1,57 @@
+
+###############################################################################
+# GCC-9.2.0-glibc-2.30                                                                       #
+###############################################################################
+FROM devel AS phloem
+
+COPY    --from=openmpi /usr/local /usr/local
+
+#Create necessary directory
+RUN mkdir -p /usr/local/phloem/bin && \
+    mkdir -p /docker/run/DATA && \
+    mkdir -p /docker/run && \
+    mkdir -p /docker/src
+
+ENV CC=mpicc \
+    CXX=mpicxx \
+    FC=mpif90
+
+# Download source
+RUN cd /tmp && \
+    wget https://github.com/LLNL/phloem/archive/v1.4.5.tar.gz && \
+    tar -zxvf v1.4.5.tar.gz
+
+#COPY INPUTFILES
+COPY data/Makefile.inc /tmp/phloem-1.4.5/
+COPY data/makefile /tmp/phloem-1.4.5/mpigraph-1.6/mpiGraph/
+
+#Build the code
+RUN cd /tmp/phloem-1.4.5/ && \
+    CFLAGS="${CFLAGS} -Ofast -fopenmp -march=armv8.1-a+lse -mcpu=thunderx2t99 -fprefetch-loop-arrays -funroll-loops -flto=32" && \
+    LDFLAGS="${LDFLAGS} -Ofast -fopenmp -march=armv8.1-a+lse -mcpu=thunderx2t99 -fprefetch-loop-arrays -funroll-loops -flto=32" && \
+    sed -i "s#__CFLAGS__#$CFLAGS#g" Makefile.inc && \
+    sed -i "s#__LDFLAGS__#$LDFLAGS#g" Makefile.inc && \
+    sed -i "s#__LDFLAGS__#$LDFLAGS#g" mpigraph-1.6/mpiGraph/makefile && \
+    sed -i "s#/usr/include/sys/resource.h#/usr/include/aarch64-linux-gnu/sys/resource.h#g" mpigraph-1.6/mpiGraph/mpiGraph.c && \
+    make -j && \
+    cp -r /tmp/phloem-1.4.5/presta-1.3.0/com /usr/local/phloem/bin/ && \
+    cp -r /tmp/phloem-1.4.5/presta-1.3.0/bw.message.sizes /docker/run/ && \
+    cp -r /tmp/phloem-1.4.5/presta-1.3.0/latency.message.sizes /docker/run/
+
+    #sed -i "s#__CFLAGS__#$CFLAGS#g" mpigraph-1.6/mpiGraph/makefile && \
+FROM    runtime
+LABEL   MAINTAINER="Prince Takkar"
+LABEL   MAINTAINER_EMAIL="ptakkar@marvell.com"
+LABEL   PHLOEM_VERSION="PHLOEM-1.4.5"
+
+COPY    --from=openmpi /usr/local/ /usr/local/
+
+COPY    --from=phloem /usr/local/phloem/bin /usr/local/phloem/bin
+COPY    --from=phloem /docker/run/ /docker/run/
+COPY    data/ /docker/run/
+
+ENV     PATH=/usr/local/phloem/bin/:${PATH}
+ENTRYPOINT /bin/bash /docker/run/run.sh
+
+RUN     chown -R guest:guest /docker/run
+USER    guest

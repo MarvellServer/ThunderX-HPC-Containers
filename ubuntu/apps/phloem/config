@@ -1,0 +1,4 @@
+APP_TYPE=hpc
+APP_NAME=phloem
+TOOLCHAIN=gcc
+COMPONENTS="devel_gcc8 ucx openmpi runtime_gcc8"
