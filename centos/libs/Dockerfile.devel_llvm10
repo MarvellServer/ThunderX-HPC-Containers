@@ -1,0 +1,121 @@
+###############################################################################
+# DEVEL_LLVM10                                                                 #
+###############################################################################
+FROM centos:8.1.1911 as devel_llvm10
+
+# install dnf plugins and enable epel repo
+RUN dnf -y install dnf-plugins-core epel-release
+
+# enable additional repos
+RUN dnf config-manager --set-enabled PowerTools
+RUN dnf config-manager --set-enabled extras
+
+# install development packages
+RUN dnf -y makecache
+RUN dnf -y install \
+      automake \
+      autoconf \
+      libtool \
+      m4 \
+      gcc \
+      gcc-c++ \
+      gcc-gfortran \
+      patch \
+      patchutils \
+      diffutils \
+      python2-devel \
+      python3-devel \
+      hwloc \
+      openssl-devel \
+      numactl \
+      numactl-devel \
+      openssh-clients \
+      git \
+      subversion \
+      wget \
+	pkg-config \
+  ca-certificates \
+	flex \
+	texinfo \
+  help2man \
+ 	unzip \
+	make \
+	gawk \
+	ncurses-devel \
+	bison \
+	rsync \
+	openssl-devel \
+  libxml2-devel \
+  libedit-devel \
+  swig \
+  libffi-devel \
+  cmake \
+  binutils-devel
+
+# update alternatives
+RUN alternatives --set python /usr/bin/python3
+RUN update-alternatives --install /usr/bin/pydoc          pydoc         /usr/bin/pydoc3         10
+RUN update-alternatives --install /usr/bin/python-config  python-config /usr/bin/python3-config 10
+RUN update-alternatives --install /usr/bin/pip            pip           /usr/bin/pip3           10
+
+# LLVM 10.0.0
+#
+# define local vars
+ENV LLVM_VERSION=10.0.0
+ENV TRIPLET_TARGET=aarch64-linux-gnu
+ENV TRIPLET_HOST=aarch64-linux-gnu
+ENV INSTALL_ROOT=/opt/llvm
+ENV BUILD_ROOT=/tmp/llvm-${LLVM_VERSION}
+ENV GCC_INSTALL_PREFIX=/usr
+ENV INSTALL_PREFIX=${INSTALL_ROOT}/${LLVM_VERSION}
+
+# LLVM : fetch source
+RUN mkdir -p ${BUILD_ROOT} && \
+  cd ${BUILD_ROOT} && \
+  wget  https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.tar.xz && \
+  tar -xf llvm-project-${LLVM_VERSION}.tar.xz
+
+# LLVM : configure
+RUN cd ${BUILD_ROOT}/llvm-project-${LLVM_VERSION} && \
+  rm -rf build-${LLVM_VERSION} && mkdir -p build-${LLVM_VERSION} && cd build-${LLVM_VERSION} && \
+  cmake -G "Unix Makefiles" \
+    -DLLVM_ENABLE_PROJECTS=clang \
+    -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_TARGETS_TO_BUILD=AArch64 \
+    -DLLVM_HOST_TRIPLE=${TRIPLET_HOST} \
+    -DLLVM_DEFAULT_TARGET_TRIPLE=${TRIPLET_TARGET} \
+    -DCMAKE_C_COMPILER=${GCC_INSTALL_PREFIX}/bin/gcc \
+    -DCMAKE_CXX_COMPILER=${GCC_INSTALL_PREFIX}/bin/g++ \
+    -DCMAKE_C_FLAGS='-w' \
+    -DCMAKE_CXX_FLAGS="-w -fpermissive" \
+    -DCMAKE_CXX_STANDARD=17 \
+    -DCLANG_BUILD_EXAMPLES=ON \
+    -DCLANG_BUILD_TOOLS=ON \
+    -DLLVM_BUILD_DOCS=ON \
+    -DLLVM_BUILD_EXAMPLES=ON \
+    -DLLVM_INSTALL_BINUTILS_SYMLINKS=ON \
+    -DLLVM_INSTALL_CCTOOLS_SYMLINKS=ON \
+    -DLLVM_INSTALL_UTILS=ON \
+    -DENABLE_LINKER_BUILD_ID=ON \
+    -DLIBCLANG_BUILD_STATIC=ON \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_ENABLE_FFI=ON \
+    -DLLVM_ENABLE_EH=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DGCC_INSTALL_PREFIX=${GCC_INSTALL_PREFIX} \
+    ../llvm
+    
+# LLVM : build and install
+RUN cd ${BUILD_ROOT}/llvm-project-${LLVM_VERSION}/build-${LLVM_VERSION} &&\
+  make -j32 && \
+  make -j install
+
+# LLVM : cleanup
+RUN rm -rf ${BUILD_ROOT}
+
+# update path
+ENV PATH=${INSTALL_PREFIX}/bin:/usr/local/bin:${PATH}
+
+FROM devel_llvm10 AS devel

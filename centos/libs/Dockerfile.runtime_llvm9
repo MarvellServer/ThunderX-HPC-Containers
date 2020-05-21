@@ -1,0 +1,29 @@
+###############################################################################
+# RUNTIME_LLVM9                                                               #
+###############################################################################
+FROM centos:8.1.1911 AS runtime_llvm9
+
+# update environment
+ENV PATH /usr/local/bin:${PATH}
+
+# install additional packages
+RUN dnf makecache
+RUN dnf -y install \
+      openssh-clients \
+      sudo
+
+# clean up
+RUN dnf -y remove *-devel
+RUN dnf -y autoremove
+RUN dnf clean all
+
+# Setup guest and give sudo permissions without password
+RUN     groupadd -r guest && \
+        useradd -r -g guest guest && \
+        usermod -aG wheel guest && \
+        sed -i 's/^# %wheel/%wheel/' /etc/sudoers
+
+# Copy only the necessary files from the devel docker image
+COPY    --from=devel /opt/llvm /opt/llvm
+
+FROM runtime_llvm9 as runtime

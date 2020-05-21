@@ -1,0 +1,32 @@
+###############################################################################
+# RUNTIME_LLVM9                                                               #
+###############################################################################
+FROM ubuntu:18.04 AS runtime_llvm9
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        sudo \
+        openssh-client \
+        libnuma1 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Setup guest and give sudo permissions without password
+RUN     groupadd -r guest && \
+        useradd -r -g guest guest && \
+        usermod -aG sudo guest && \
+        sed -i '26d' /etc/sudoers && \
+        sed -i '26i\%sudo   ALL=(ALL:ALL) NOPASSWD:ALL' /etc/sudoers
+
+# Remove unnecessary packages
+RUN	apt-get update -y && \
+	DEBIAN_FRONTEND=noninteractive apt-get remove -y \
+          "*dev-*" "*-dev*" && \
+	rm -rf /var/lib/apt/lists/*
+
+# Setup environment paths
+ENV     PATH=/usr/local/bin:${PATH} \
+        LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64:$LD_LIBRARY_PATH
+
+# Copy only the necessary files from the devel docker image
+COPY    --from=devel /opt/llvm /opt/llvm
+
+FROM runtime_llvm9 as runtime

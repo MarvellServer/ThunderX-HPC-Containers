@@ -1,0 +1,116 @@
+###############################################################################
+# DEVEL_LLVM10                                                                #
+###############################################################################
+FROM ubuntu:18.04 as devel_llvm10
+RUN apt-get update -y && \
+  DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+	wget \
+  git \
+  automake \
+  autoconf \
+  libtool \
+	m4 \
+	pkg-config \
+  ca-certificates \
+  python \ 
+	python-dev \
+	flex \
+	texinfo \
+  help2man \
+ 	unzip \
+	make \
+	gawk \
+	libtool-bin \
+	libncurses5-dev \
+	bison \
+	rsync \
+	libssl-dev \
+  libxml2-dev \
+  libedit-dev \
+  swig \
+  libffi-dev \
+  cmake \
+  binutils-dev \
+	python3-pip \
+	python3.6-dev \
+	python3-dev && \
+	rm -rf /var/lib/apt/lists/*
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python3 1 && \
+    update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++-8 \
+        gcc-8 \
+	      sudo \
+        libnuma-dev \
+        openssh-client \
+        gfortran-8 && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/gcc gcc $(which gcc-8) 30 && \
+    update-alternatives --install /usr/bin/g++ g++ $(which g++-8) 30 && \
+    update-alternatives --install /usr/bin/gfortran gfortran $(which gfortran-8) 30 && \
+    update-alternatives --install /usr/bin/gcov gcov $(which gcov-8) 30
+
+# LLVM 10.0.0
+#
+# define local vars
+ENV LLVM_VERSION=10.0.0
+ENV TRIPLET_TARGET=aarch64-linux-gnu
+ENV TRIPLET_HOST=aarch64-linux-gnu
+ENV INSTALL_ROOT=/opt/llvm
+ENV BUILD_ROOT=/tmp/llvm-${LLVM_VERSION}
+ENV GCC_INSTALL_PREFIX=/usr
+ENV INSTALL_PREFIX=${INSTALL_ROOT}/${LLVM_VERSION}
+
+# LLVM : fetch source
+RUN mkdir -p ${BUILD_ROOT} && \
+  cd ${BUILD_ROOT} && \
+  wget  https://github.com/llvm/llvm-project/releases/download/llvmorg-${LLVM_VERSION}/llvm-project-${LLVM_VERSION}.tar.xz && \
+  tar -xf llvm-project-${LLVM_VERSION}.tar.xz
+
+# LLVM : configure
+RUN cd ${BUILD_ROOT}/llvm-project-${LLVM_VERSION} && \
+  rm -rf build-${LLVM_VERSION} && mkdir -p build-${LLVM_VERSION} && cd build-${LLVM_VERSION} && \
+  cmake -G "Unix Makefiles" \
+    -DLLVM_ENABLE_PROJECTS=clang \
+    -DCMAKE_INSTALL_PREFIX=${INSTALL_PREFIX} \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DLLVM_TARGETS_TO_BUILD=AArch64 \
+    -DLLVM_HOST_TRIPLE=${TRIPLET_HOST} \
+    -DLLVM_DEFAULT_TARGET_TRIPLE=${TRIPLET_TARGET} \
+    -DCMAKE_C_COMPILER=${GCC_INSTALL_PREFIX}/bin/gcc \
+    -DCMAKE_CXX_COMPILER=${GCC_INSTALL_PREFIX}/bin/g++ \
+    -DCMAKE_C_FLAGS='-w' \
+    -DCMAKE_CXX_FLAGS="-w -fpermissive" \
+    -DCMAKE_CXX_STANDARD=17 \
+    -DCLANG_BUILD_EXAMPLES=ON \
+    -DCLANG_BUILD_TOOLS=ON \
+    -DLLVM_BUILD_DOCS=ON \
+    -DLLVM_BUILD_EXAMPLES=ON \
+    -DLLVM_INSTALL_BINUTILS_SYMLINKS=ON \
+    -DLLVM_INSTALL_CCTOOLS_SYMLINKS=ON \
+    -DLLVM_INSTALL_UTILS=ON \
+    -DENABLE_LINKER_BUILD_ID=ON \
+    -DLIBCLANG_BUILD_STATIC=ON \
+    -DLLVM_BUILD_LLVM_DYLIB=ON \
+    -DLLVM_ENABLE_FFI=ON \
+    -DLLVM_ENABLE_EH=ON \
+    -DLLVM_ENABLE_RTTI=ON \
+    -DLLVM_ENABLE_ASSERTIONS=ON \
+    -DGCC_INSTALL_PREFIX=${GCC_INSTALL_PREFIX} \
+    ../llvm
+    
+# LLVM : build and install
+RUN cd ${BUILD_ROOT}/llvm-project-${LLVM_VERSION}/build-${LLVM_VERSION} &&\
+  make -j32 && \
+  make -j install
+
+# LLVM : cleanup
+RUN rm -rf ${BUILD_ROOT}
+
+# update path
+ENV PATH=${INSTALL_PREFIX}/bin:/usr/local/bin:${PATH}
+
+FROM devel_llvm10 AS devel
