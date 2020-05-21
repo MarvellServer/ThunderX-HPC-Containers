@@ -255,7 +255,7 @@ RUN cd ${BUILD_ROOT} && \
 
 # Cleanup :
 RUN rm -rf ${INSTALL_ROOT}/9.0.0 && \
-  rm -rf $${INSTALL_ROOT}/9.0.1-s1 && \
+  rm -rf ${INSTALL_ROOT}/9.0.1-s1 && \
   rm -rf ${BUILD_ROOT}
 
 # update path
