@@ -10,14 +10,14 @@ RUN apt-get update -y && \
         gnupg1 && \
     rm -rf /var/lib/apt/lists/*
 
-RUN  mkdir -p /tmp/cuda11
-COPY cuda-repo-ubuntu1804-11-0-local_11.0.0-2020.1.2.52-1_arm64.deb /tmp/cuda11
+RUN  mkdir -p /tmp/cuda11 && \
+     cd /tmp/cuda11 && \
+     wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda-repo-ubuntu1804-11-0-local_11.0.1-450.36.06-1_arm64.deb && \
+     dpkg -i cuda-repo-ubuntu1804-11-0-local_11.0.1-450.36.06-1_arm64.deb && \
+     apt-key add /var/cuda-repo-ubuntu1804-11-0-local/7fa2af80.pub && \
+     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/sbsa/cuda-ubuntu1804.pin && \
+     mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600
 
-RUN  cd /tmp/cuda11 && \
-     wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu1804/x86_64/cuda-ubuntu1804.pin && \
-     mv cuda-ubuntu1804.pin /etc/apt/preferences.d/cuda-repository-pin-600 && \
-     dpkg -i cuda-repo-ubuntu1804-11-0-local_11.0.0-2020.1.2.52-1_arm64.deb && \
-     apt-key add /var/cuda-repo-ubuntu1804-11-0-local/7fa2af80.pub
 
 RUN apt-get update -y && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -29,9 +29,9 @@ RUN apt-get update -y && \
       cuda-command-line-tools-11-0 \
       cuda-compiler-11-0 \
       cuda-nvcc-11-0 \
-      libnvidia-compute-445 \
-      libnvidia-decode-445 \
-      libnvidia-encode-445 \
+      libnvidia-compute-450 \
+      libnvidia-decode-450 \
+      libnvidia-encode-450 \
       libcusolver-11-0 && \
     rm -rf /var/lib/apt/lists/*
 
@@ -47,7 +47,7 @@ RUN apt-get update -y && \
     rm libglx0_1.0.0-2ubuntu2.3_arm64.deb && \
     sed -i '/Depends/s/, libglx-mesa0//g' /var/lib/dpkg/status && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-       libnvidia-gl-445 && \
+       libnvidia-gl-450 && \
     rm -rf /var/lib/apt/lists/*
 
 RUN rm -rf /var/cuda-repo-ubuntu1804-11-0-local && \
